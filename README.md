@@ -30,15 +30,15 @@
 ** receives the SNS notification (see setup_auditor.sh for required permissions)
 ** runs the requested "process" against the given account using the cross account role ARN
 
-#Auditor Design Notes & Roadmap
+# Auditor Design Notes & Roadmap
 
-##Data Sources
+## Data Sources
 * AWS API - Primary 
 * CloudHealthTech API
 * Alert Logic API
 * Kubernetes APIs
 
-###AWS API
+### AWS API
 * Collect Data from AWS 
   * start with a single account - DONE 12/22/2016
   * Use Python so it can be deployed in LAMBDA
@@ -72,21 +72,7 @@
 * Archive the Data - 
 	* Figure out how to archive data for long-term forensics 
 
-###CloudHealthTech API -
-* CSA CCM guidance?
-* Inventory data
-
-###Alert Logic API - 
-* Cloud Insight
-  * Vulnerabilities
-  * Environments (protected accounts)
-  * Remediations
-* Cloud Defender
-  * Protected accounts
-
-###Harbor APIs
-
-##Reports
+## Reports
 * User & Permission audit report
   * Business Units/Managers must approve the list of users and their level of access once a quarter
   * Provide a mechanism to SEE AWS users and permissions
