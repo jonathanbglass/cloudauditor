@@ -12,11 +12,11 @@ GitHub Actions needs an S3 bucket to store deployment artifacts:
 
 ```bash
 # For dev environment
-aws s3 mb s3://cloudauditor-deployments-dev --region us-east-2
+aws s3 mb s3://cloudauditor-deployments-dev --region us-east-1
 
 # Optional: For staging/prod
-aws s3 mb s3://cloudauditor-deployments-staging --region us-east-2
-aws s3 mb s3://cloudauditor-deployments-prod --region us-east-2
+aws s3 mb s3://cloudauditor-deployments-staging --region us-east-1
+aws s3 mb s3://cloudauditor-deployments-prod --region us-east-1
 ```
 
 #### Step 2: Configure GitHub Secrets
