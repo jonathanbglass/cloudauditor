@@ -12,7 +12,7 @@ def process(thisiam, cur, accountid):
         instances = ec2client2.describe_instances()
         c = len(instances['Reservations'])
         if c > 0:
-            print "Processing "+str(c)+" Instances"
+            print("Processing " + str(c) + " Instances")
             i = instances['Reservations']
             # if prepared statement exists, ignore the error
             try:
@@ -29,7 +29,7 @@ def process(thisiam, cur, accountid):
 
         tags = ec2client2.describe_tags()['Tags']
         if len(tags) > 0:
-            print "Processing "+str(len(tags))+" Instance Tags"
+            print("Processing " + str(len(tags)) + " Instance Tags")
             # if prepared statement exists, ignore the error
             try:
                 cur.execute("PREPARE tagplan AS INSERT INTO aud_tags"
@@ -42,6 +42,6 @@ def process(thisiam, cur, accountid):
                 try:
                         cur.execute("EXECUTE tagplan (%s, %s, %s, %s, %s, %s)", (accountid, "now()", z['ResourceType'], z['ResourceId'], z['Key'], z['Value']))
                 except:
-                    print z
+                    print(z)
                     pass
     return;

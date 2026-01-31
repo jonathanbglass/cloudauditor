@@ -1,5 +1,6 @@
 from __future__ import print_function
 import boto3
+from botocore.exceptions import ClientError
 import json
 import psycopg2
 import sys, os
@@ -11,7 +12,7 @@ def connect_to_db():
         conn = psycopg2.connect(connstring)
         cur = conn.cursor()
         conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-    except psycopg2.DatabaseError, exception:
+    except psycopg2.DatabaseError as exception:
         print (exception)
         sys.exit(1)
     print ("Database connection successful")
@@ -20,7 +21,7 @@ def connect_to_db():
 def grab_roles(cur):
     try:
         cur.execute("SELECT aws_account_id, role_arn from aws_cross_account_roles")
-    except psycopg2.DatabaseError, exception:
+    except psycopg2.DatabaseError as exception:
         print (exception)
         sys.exit(1)
     roles = cur.fetchall()
@@ -40,7 +41,7 @@ def process_remote(cur, account, arn, session, process_item):
         try:
             cur.execute("UPDATE aws_cross_account_roles set working = %s, last_used_ts = %s "
                     "where role_arn = %s", (True, "now()", arn))
-        except psycopg2.DatabaseError, exception:
+        except psycopg2.DatabaseError as exception:
             print (exception)
             sys.exit(1)
         sys.exit(1)
