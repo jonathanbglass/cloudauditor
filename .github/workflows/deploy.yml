@@ -140,13 +140,7 @@ jobs:
 
       - name: SAM Deploy
         run: |
-          sam deploy \
-            --template-file packaged.yaml \
-            --stack-name cloudauditor-${{ matrix.environment }} \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides Environment=${{ matrix.environment }} DatabaseMasterPassword=${{ secrets.DB_PASSWORD }} \
-            --no-fail-on-empty-changeset \
-            --no-confirm-changeset
+          sam deploy --template-file packaged.yaml --stack-name cloudauditor-${{ matrix.environment }} --capabilities CAPABILITY_NAMED_IAM --parameter-overrides Environment=${{ matrix.environment }} DatabaseMasterPassword=${{ secrets.DB_PASSWORD }} --no-fail-on-empty-changeset --no-confirm-changeset
 
       - name: Get Stack Outputs
         id: stack-outputs
