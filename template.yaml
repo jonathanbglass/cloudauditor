@@ -296,6 +296,7 @@ Resources:
       EngineMode: provisioned
       EngineVersion: '15.8'
       DatabaseName: !Ref DatabaseName
+      Port: 5432
       MasterUsername: !Ref DatabaseMasterUsername
       MasterUserPassword: !Ref DatabaseMasterPassword
       DBSubnetGroupName: !Ref DBSubnetGroup
