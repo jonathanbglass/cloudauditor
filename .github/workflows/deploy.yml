@@ -97,7 +97,7 @@ jobs:
         run: |
           sam package \
             --output-template-file packaged.yaml \
-            --s3-bucket cloudauditor-deployments-${{ matrix.environment }} \
+            --s3-bucket cloudauditor-artifacts-2026 \
             --s3-prefix ${{ github.sha }} \
             --region ${{ env.AWS_REGION }}
 
