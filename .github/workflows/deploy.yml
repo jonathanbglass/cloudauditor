@@ -21,7 +21,7 @@ on:
           - prod
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: us-east-2
   SAM_CLI_TELEMETRY: 0
 
 jobs:
