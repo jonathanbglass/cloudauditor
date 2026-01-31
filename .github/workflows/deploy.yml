@@ -144,9 +144,7 @@ jobs:
             --template-file packaged.yaml \
             --stack-name cloudauditor-${{ matrix.environment }} \
             --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides \
-              Environment=${{ matrix.environment }} \
-              DatabaseMasterPassword=${{ secrets.DB_PASSWORD }} \
+            --parameter-overrides Environment=${{ matrix.environment }} DatabaseMasterPassword=${{ secrets.DB_PASSWORD }} \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset
 
