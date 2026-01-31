@@ -1,89 +1,229 @@
-# iso-cloud-auditor
+# CloudAuditor
 
-# Documentation
+AWS cloud auditing and resource discovery system.
+
+## Overview
+
+CloudAuditor is a comprehensive AWS auditing system that:
+- Audits IAM users, roles, groups, and policies across multiple AWS accounts
+- Discovers and inventories AWS resources automatically
+- Stores audit data in PostgreSQL for analysis
+- Runs as AWS Lambda functions for scheduled execution
+
+## Features
+
+### IAM Auditing
+- Cross-account IAM auditing via STS AssumeRole
+- User, role, group, and policy inventory
+- EC2 instance tracking
+- PostgreSQL database storage
+
+### Resource Discovery (NEW)
+- **Automatic discovery** of 200+ AWS resource types
+- **Zero manual coding** - no per-service modules needed
+- **Intelligent fallback** between Resource Explorer, Config, and Cloud Control API
+- **Fast parallel processing** with configurable filters
+- See [Resource Discovery Documentation](docs/resource_discovery/) for details
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.14+
+- AWS credentials configured
+- PostgreSQL database (for IAM auditing)
+
+### Local Development
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd cloudauditor
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your credentials
+```
+
+### Deployment
+
+**🚀 Quick Deploy with GitHub Actions + AWS SAM:**
+
+1. Set GitHub Secrets (AWS credentials, database config)
+2. Create S3 bucket: `aws s3 mb s3://cloudauditor-deployments-dev`
+3. Push to `develop` branch → Auto-deploys to dev
+4. Push to `main` branch → Auto-deploys to prod
+
+**📖 See [QUICKSTART.md](QUICKSTART.md) for 5-minute deployment guide**
+**📖 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete deployment documentation**
+
+### Local Testing
+
+#### IAM Auditing
+
+```bash
+# Audit all accounts
+python auditor.py
+
+# Audit local account only
+python auditor.py --audit local
+
+# Audit remote accounts only
+python auditor.py --audit remote
+```
+
+#### Resource Discovery
+
+```bash
+# Run discovery test
+python test_discovery.py
+
+# Use in code
+from resource_discovery import ResourceDiscoveryEngine
+engine = ResourceDiscoveryEngine()
+result = engine.discover_all_resources()
+print(f"Found {result.total_count} resources")
+```
+
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+### Python 3.14 Upgrade
+- [Assessment](docs/python_upgrade/01_assessment.md) - Upgrade analysis and planning
+- [Upgrade Summary](docs/python_upgrade/02_upgrade_summary.md) - Completed changes
+- [Modernization](docs/python_upgrade/03_modernization.md) - Code quality improvements
+
+### Resource Discovery
+- [Implementation Plan](docs/resource_discovery/implementation_plan.md) - Technical design
+- [POC Walkthrough](docs/resource_discovery/poc_walkthrough.md) - Usage guide
+- [Module README](resource_discovery/README.md) - Detailed API documentation
+
+## Project Structure
+
+```
+cloudauditor/
+├── docs/                      # Documentation
+│   ├── python_upgrade/        # Python 3.14 upgrade docs
+│   └── resource_discovery/    # Resource discovery docs
+├── resource_discovery/        # Resource discovery module
+│   ├── __init__.py
+│   ├── models.py
+│   ├── discovery_engine.py
+│   ├── resource_explorer_client.py
+│   ├── config_client.py
+│   ├── cloud_control_client.py
+│   └── README.md
+├── lambda/                    # Lambda deployment scripts
+│   └── setup_auditor.sh
+├── auditor.py                 # Main auditor script
+├── manager.py                 # Lambda manager function
+├── processor.py               # Lambda processor function
+├── process_*.py               # IAM processing modules
+├── test_discovery.py          # Resource discovery test script
+├── requirements.txt           # Python dependencies
+├── .env.example               # Environment configuration template
+└── README.md                  # This file
+```
+
+## Lambda Deployment
+
+### Setup
+
+1. Package Lambda function:
+```bash
+cd lambda
+zip -r iso-iam-auditor.zip ../*.py ../lib/
+```
+
+2. Deploy using setup script:
+```bash
+./setup_auditor.sh
+```
+
+### Environment Variables
+
+Lambda functions require these environment variables:
+- `dbname` - Database name
+- `dbuser` - Database user
+- `dbhost` - Database host
+- `dbpass` - Database password
+
 ## Requirements
-* Postgresql Database Endpoint
-* Postgresql User with SELECT, INSERT, and UPDATE rights
-* Tables as defined in create_tables.sql
-* pycopg2 module
-* boto3 module
-* Script must run in EC2 with instance role allowing access to STS:AssumeRole
-* Policy must permit sts:assumerole for each remote account: see example_iam_policy.json
-## Use
-    $ python auditor.py (default is Audit All Accounts)
-    $ python auditor.py -h 
 
-# LAMBDA Use
-* See the cloud-auditor/lambda/ directory
-* iso-cloud-auditor/lambda/setup_auditor.sh
-** adjust the setup_auditor.sh script for your environment
-** written to pull files from development server via scp
-** deletes existing LAMBDAs
-** creates new LAMBDAs with the same name
-** handles permissions for SNS topics / notification to processor lambda
-* iso-cloud-auditor/manager.py - 
-** checks the database for Cross Account Roles
-** creates messages in an SNS topic
-** one message for EACH account, and EACH Process ITEM
-** ie, Account #, ARN, process_users
-* iso-cloud-auditor/processor.py
-** receives the SNS notification (see setup_auditor.sh for required permissions)
-** runs the requested "process" against the given account using the cross account role ARN
+### Python Packages
 
-# Auditor Design Notes & Roadmap
+- boto3 >= 1.35.0 (AWS SDK)
+- psycopg2-binary >= 2.9.9 (PostgreSQL driver)
+- beautifulsoup4 >= 4.12.0 (HTML parsing)
+- requests >= 2.32.0 (HTTP library)
 
-## Data Sources
-* AWS API - Primary 
-* CloudHealthTech API
-* Alert Logic API
-* Kubernetes APIs
+### AWS Services
 
-### AWS API
-* Collect Data from AWS 
-  * start with a single account - DONE 12/22/2016
-  * Use Python so it can be deployed in LAMBDA
-  * Collect Users, Groups, Roles, and Policy details - DONE 2/2/2017
-  	* Users -
-    * Groups - 
-    * Roles - 
-    * Policies - 
-  * Loop through every ARN in aws_cross_account_arn ISODB table and collect this data - DONE 2/2/2017       
-	* Collect each data set as a separate thread to speed up processing - LOW PRIORITY
-	* Restrict to Attached policies only - DONE 1/2/2017
-* Store Data in Database - 
-	* Convert data into SQL statement - DONE 12/22/2016
-	* Connect to PGSQL ISODB - DONE 12/22/2016
-	* Insert rows to begin with
-	  * Update on Insert to minimize database work: 
-	  * match on {RoleID, UserID, PolicyID, GroupID}, CreateDate and UpdateDate; 
-	  * If no change, just update Last Audited TimeStamp
-	* Close DB connection - DONE 1/2/2017
-* Figure out how to get pycopg2 to work in AWS LAMBDA 
-* Display the data
-	* First, just display the data
-	* Add filtering/sorting options
-	* Add authentication
-	* Enforce RBAC 
-		* Make sure every record has an Account ID field for RBAC perms tracking
-* Interact with the Data
-	* Provide an Account Audit Report for Account Owners
-		* Give the option to flag certain accounts for deletion/disabling - after RBAC
-	* Provide 
-* Archive the Data - 
-	* Figure out how to archive data for long-term forensics 
+- IAM (for auditing)
+- STS (for cross-account access)
+- Lambda (for scheduled execution)
+- SNS (for message passing)
+- Resource Explorer (optional, for resource discovery)
+- AWS Config (optional, for detailed configuration)
 
-## Reports
-* User & Permission audit report
-  * Business Units/Managers must approve the list of users and their level of access once a quarter
-  * Provide a mechanism to SEE AWS users and permissions
-  * Provide a mechanism to FLAG/DISABLE users
-* Accounts Security Overview
-  * RYG icons for each security tool/service per account
-  * RYG icons for each security best practice/recommendation 
-    * See CSA CCM Guidelines
-* Accounts Overview
-  * Billing information for each AWS account
-  * Account Owners for each account
-  * Support Team responsible for each account
-  * Security Contact for each account
-  
+### IAM Permissions
+
+See [implementation plan](docs/resource_discovery/implementation_plan.md) for detailed permission requirements.
+
+## Database Schema
+
+See `create_tables.sql` for the complete database schema.
+
+Key tables:
+- `aws_cross_account_roles` - Cross-account role configuration
+- `aws_users` - IAM user inventory
+- `aws_roles` - IAM role inventory
+- `aws_groups` - IAM group inventory
+- `aws_policies` - IAM policy inventory
+- `aws_resources` - Resource discovery inventory (new)
+
+## Development
+
+### Running Tests
+
+```bash
+# Test resource discovery
+python test_discovery.py
+
+# Compile all Python files
+python -m py_compile *.py resource_discovery/*.py
+```
+
+### Code Style
+
+- Python 3.14+ syntax
+- Type hints on all functions
+- F-strings for formatting
+- Structured logging (not print statements)
+- Environment variables for configuration
+
+## Version History
+
+### 2026-01-31
+- ✅ Upgraded to Python 3.14
+- ✅ Added type hints and modern Python features
+- ✅ Implemented structured logging
+- ✅ Added resource discovery system
+- ✅ Created comprehensive documentation
+
+### Previous
+- Legacy Python 3.6.5 codebase
+- IAM auditing functionality
+- Lambda deployment
+
+## License
+
+[Add license information]
+
+## Support
+
+For issues or questions, refer to the documentation in the `docs/` directory.

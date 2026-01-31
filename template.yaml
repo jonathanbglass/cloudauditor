@@ -1,0 +1,601 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: CloudAuditor - AWS IAM Auditing and Resource Discovery System
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+  
+  # Database Configuration
+  DatabaseName:
+    Type: String
+    Description: PostgreSQL database name
+    Default: cloudauditor
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters and underscores
+  
+  DatabaseMasterUsername:
+    Type: String
+    Description: Master username for Aurora cluster
+    Default: cloudauditor_admin
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters and underscores
+  
+  DatabaseMasterPassword:
+    Type: String
+    Description: Master password for Aurora cluster (min 8 characters)
+    NoEcho: true
+    MinLength: 8
+    AllowedPattern: '^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:,.<>?]*$'
+    ConstraintDescription: Must be at least 8 characters and contain only alphanumeric and special characters
+  
+  # VPC Configuration (optional - creates new VPC if not provided)
+  VpcId:
+    Type: String
+    Description: Optional - Existing VPC ID (leave empty to create new VPC)
+    Default: ''
+  
+  PrivateSubnetIds:
+    Type: CommaDelimitedList
+    Description: Optional - Existing private subnet IDs (leave empty to create new subnets)
+    Default: ''
+  
+  # Aurora Configuration
+  AuroraMinCapacity:
+    Type: Number
+    Description: Minimum Aurora Serverless v2 capacity (ACUs)
+    Default: 0.5
+    AllowedValues: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  AuroraMaxCapacity:
+    Type: Number
+    Description: Maximum Aurora Serverless v2 capacity (ACUs)
+    Default: 2
+    AllowedValues: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 16, 32, 64, 128]
+  
+  EnableDatabaseBackups:
+    Type: String
+    Description: Enable automated database backups
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+  
+  BackupRetentionDays:
+    Type: Number
+    Description: Number of days to retain automated backups
+    Default: 7
+    MinValue: 1
+    MaxValue: 35
+
+Conditions:
+  CreateVPC: !Equals [!Ref VpcId, '']
+  UseExistingVPC: !Not [!Equals [!Ref VpcId, '']]
+  EnableBackups: !Equals [!Ref EnableDatabaseBackups, 'true']
+
+Globals:
+  Function:
+    Runtime: python3.14
+    Timeout: 120
+    MemorySize: 512
+    VpcConfig:
+      SecurityGroupIds:
+        - !Ref LambdaSecurityGroup
+      SubnetIds: !If
+        - CreateVPC
+        - [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+        - !Ref PrivateSubnetIds
+    Environment:
+      Variables:
+        DB_NAME: !Ref DatabaseName
+        DB_USER: !Ref DatabaseMasterUsername
+        DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+        DB_PORT: !GetAtt AuroraCluster.Endpoint.Port
+        LOG_LEVEL: INFO
+        ENVIRONMENT: !Ref Environment
+
+Resources:
+  # ==================== NETWORKING ====================
+  
+  # VPC (created only if VpcId is not provided)
+  VPC:
+    Type: AWS::EC2::VPC
+    Condition: CreateVPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-vpc-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Internet Gateway (for NAT Gateway)
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Condition: CreateVPC
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-igw-${Environment}
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: CreateVPC
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Private Subnets for Lambda and Aurora
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-private-subnet-1-${Environment}
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-private-subnet-2-${Environment}
+
+  # Public Subnets for NAT Gateway
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Condition: CreateVPC
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.100.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-public-subnet-1-${Environment}
+
+  # NAT Gateway for Lambda internet access
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    Condition: CreateVPC
+    DependsOn: AttachGateway
+    Properties:
+      Domain: vpc
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Condition: CreateVPC
+    Properties:
+      AllocationId: !GetAtt NATGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-nat-${Environment}
+
+  # Route Tables
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: CreateVPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-public-rt-${Environment}
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateVPC
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVPC
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: CreateVPC
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-private-rt-${Environment}
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateVPC
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVPC
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateVPC
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  # ==================== SECURITY GROUPS ====================
+  
+  # Security Group for Lambda functions
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for CloudAuditor Lambda functions
+      VpcId: !If [CreateVPC, !Ref VPC, !Ref VpcId]
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-lambda-sg-${Environment}
+
+  # Security Group for Aurora cluster
+  AuroraSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for CloudAuditor Aurora cluster
+      VpcId: !If [CreateVPC, !Ref VPC, !Ref VpcId]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+          Description: Allow PostgreSQL access from Lambda functions
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-aurora-sg-${Environment}
+
+  # ==================== DATABASE ====================
+  
+  # DB Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub cloudauditor-db-subnet-group-${Environment}
+      DBSubnetGroupDescription: Subnet group for CloudAuditor Aurora cluster
+      SubnetIds: !If
+        - CreateVPC
+        - [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+        - !Ref PrivateSubnetIds
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-db-subnet-group-${Environment}
+
+  # Aurora Serverless v2 Cluster
+  AuroraCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: aurora-postgresql
+      EngineMode: provisioned
+      EngineVersion: '15.8'
+      DatabaseName: !Ref DatabaseName
+      MasterUsername: !Ref DatabaseMasterUsername
+      MasterUserPassword: !Ref DatabaseMasterPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref AuroraSecurityGroup
+      BackupRetentionPeriod: !If [EnableBackups, !Ref BackupRetentionDays, 1]
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      EnableIAMDatabaseAuthentication: true
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref AuroraMinCapacity
+        MaxCapacity: !Ref AuroraMaxCapacity
+      StorageEncrypted: true
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-aurora-cluster-${Environment}
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Aurora Serverless v2 Instance
+  AuroraInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBInstanceClass: db.serverless
+      DBClusterIdentifier: !Ref AuroraCluster
+      PubliclyAccessible: false
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-aurora-instance-${Environment}
+
+  # Secrets Manager Secret for database credentials
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub cloudauditor-db-credentials-${Environment}
+      Description: Database credentials for CloudAuditor
+      SecretString: !Sub |
+        {
+          "username": "${DatabaseMasterUsername}",
+          "password": "${DatabaseMasterPassword}",
+          "engine": "postgres",
+          "host": "${AuroraCluster.Endpoint.Address}",
+          "port": ${AuroraCluster.Endpoint.Port},
+          "dbname": "${DatabaseName}"
+        }
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-db-secret-${Environment}
+
+  # ==================== IAM ROLES ====================
+  
+  # IAM Role for Lambda functions
+  CloudAuditorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub cloudauditor-lambda-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: CloudAuditorPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # IAM Auditing permissions
+              - Effect: Allow
+                Action:
+                  - iam:ListUsers
+                  - iam:ListRoles
+                  - iam:ListGroups
+                  - iam:ListPolicies
+                  - iam:GetUser
+                  - iam:GetRole
+                  - iam:GetGroup
+                  - iam:GetPolicy
+                  - iam:ListAttachedUserPolicies
+                  - iam:ListAttachedRolePolicies
+                  - iam:ListAttachedGroupPolicies
+                  - ec2:DescribeInstances
+                  - ec2:DescribeRegions
+                  - ec2:DescribeTags
+                Resource: '*'
+              
+              # Resource Discovery permissions
+              - Effect: Allow
+                Action:
+                  - resource-explorer-2:Search
+                  - resource-explorer-2:ListIndexes
+                  - resource-explorer-2:GetResource
+                  - config:DescribeConfigurationRecorders
+                  - config:DescribeConfigurationRecorderStatus
+                  - config:ListDiscoveredResources
+                  - config:GetResourceConfigHistory
+                  - cloudcontrol:ListResources
+                  - cloudcontrol:GetResource
+                Resource: '*'
+              
+              # Cross-account access
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                  - sts:GetCallerIdentity
+                Resource: '*'
+              
+              # Secrets Manager access for database credentials
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource: !Ref DatabaseSecret
+              
+              # RDS IAM Database Authentication
+              - Effect: Allow
+                Action:
+                  - rds-db:connect
+                Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${AuroraCluster}/${DatabaseMasterUsername}'
+              
+              # SNS publishing
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref AuditorTopic
+
+  # SNS Topic for Lambda communication
+  AuditorTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub cloudauditor-topic-${Environment}
+      DisplayName: CloudAuditor Processing Topic
+
+  # Manager Lambda Function
+  ManagerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-manager-${Environment}
+      CodeUri: .
+      Handler: manager.lambda_handler
+      Description: CloudAuditor Manager - Initiates audit scans
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref AuditorTopic
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 2 * * ? *)  # Daily at 2 AM UTC
+            Description: Daily audit scan
+            Enabled: true
+
+  # Processor Lambda Function
+  ProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-processor-${Environment}
+      CodeUri: .
+      Handler: processor.lambda_handler
+      Description: CloudAuditor Processor - Processes audit data
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref AuditorTopic
+
+  # Resource Discovery Lambda Function
+  ResourceDiscoveryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-discovery-${Environment}
+      CodeUri: .
+      Handler: resource_discovery_lambda.lambda_handler
+      Description: CloudAuditor Resource Discovery
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 300  # 5 minutes for discovery
+      MemorySize: 1024
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 3 * * ? *)  # Daily at 3 AM UTC
+            Description: Daily resource discovery
+            Enabled: true
+
+  # SNS Topic Permission for Processor Lambda
+  ProcessorFunctionInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProcessorFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref AuditorTopic
+
+  # CloudWatch Log Groups with retention
+  ManagerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/cloudauditor-manager-${Environment}
+      RetentionInDays: 30
+
+  ProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/cloudauditor-processor-${Environment}
+      RetentionInDays: 30
+
+  DiscoveryLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/cloudauditor-discovery-${Environment}
+      RetentionInDays: 30
+
+Outputs:
+  ManagerFunctionArn:
+    Description: Manager Lambda Function ARN
+    Value: !GetAtt ManagerFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ManagerFunctionArn
+
+  ProcessorFunctionArn:
+    Description: Processor Lambda Function ARN
+    Value: !GetAtt ProcessorFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ProcessorFunctionArn
+
+  ResourceDiscoveryFunctionArn:
+    Description: Resource Discovery Lambda Function ARN
+    Value: !GetAtt ResourceDiscoveryFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-ResourceDiscoveryFunctionArn
+
+  SNSTopicArn:
+    Description: SNS Topic ARN
+    Value: !Ref AuditorTopic
+    Export:
+      Name: !Sub ${AWS::StackName}-SNSTopicArn
+
+  LambdaRoleArn:
+    Description: Lambda Execution Role ARN
+    Value: !GetAtt CloudAuditorLambdaRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaRoleArn
+
+  # Database Outputs
+  DatabaseEndpoint:
+    Description: Aurora cluster endpoint
+    Value: !GetAtt AuroraCluster.Endpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-DatabaseEndpoint
+
+  DatabasePort:
+    Description: Aurora cluster port
+    Value: !GetAtt AuroraCluster.Endpoint.Port
+    Export:
+      Name: !Sub ${AWS::StackName}-DatabasePort
+
+  DatabaseName:
+    Description: Database name
+    Value: !Ref DatabaseName
+    Export:
+      Name: !Sub ${AWS::StackName}-DatabaseName
+
+  DatabaseSecretArn:
+    Description: Secrets Manager secret ARN for database credentials
+    Value: !Ref DatabaseSecret
+    Export:
+      Name: !Sub ${AWS::StackName}-DatabaseSecretArn
+
+  # VPC Outputs
+  VpcId:
+    Description: VPC ID
+    Value: !If [CreateVPC, !Ref VPC, !Ref VpcId]
+    Export:
+      Name: !Sub ${AWS::StackName}-VpcId
+
+  PrivateSubnets:
+    Description: Private subnet IDs
+    Value: !If
+      - CreateVPC
+      - !Sub '${PrivateSubnet1},${PrivateSubnet2}'
+      - !Join [',', !Ref PrivateSubnetIds]
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateSubnets
+
+  LambdaSecurityGroupId:
+    Description: Lambda security group ID
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-LambdaSecurityGroupId
+
+  AuroraSecurityGroupId:
+    Description: Aurora security group ID
+    Value: !Ref AuroraSecurityGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-AuroraSecurityGroupId

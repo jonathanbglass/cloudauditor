@@ -1,0 +1,224 @@
+name: Deploy CloudAuditor
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-east-1
+  SAM_CLI_TELEMETRY: 0
+
+jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8 mypy
+
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Type check with mypy
+        run: |
+          mypy *.py resource_discovery/ --ignore-missing-imports || true
+
+      - name: Compile all Python files
+        run: |
+          python -m compileall *.py resource_discovery/
+
+  build-and-package:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        environment: 
+          - ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Set up AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM Build
+        run: |
+          sam build --use-container
+
+      - name: SAM Package
+        run: |
+          sam package \
+            --output-template-file packaged.yaml \
+            --s3-bucket cloudauditor-deployments-${{ matrix.environment }} \
+            --s3-prefix ${{ github.sha }}
+
+      - name: Upload packaged template
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-template-${{ matrix.environment }}
+          path: packaged.yaml
+          retention-days: 7
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: build-and-package
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        environment:
+          - ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+    environment:
+      name: ${{ matrix.environment }}
+      url: https://console.aws.amazon.com/lambda/home?region=${{ env.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download packaged template
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-template-${{ matrix.environment }}
+
+      - name: SAM Deploy
+        run: |
+          sam deploy \
+            --template-file packaged.yaml \
+            --stack-name cloudauditor-${{ matrix.environment }} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              Environment=${{ matrix.environment }} \
+              DatabaseMasterPassword=${{ secrets.DB_PASSWORD }} \
+            --no-fail-on-empty-changeset \
+            --no-confirm-changeset
+
+      - name: Get Stack Outputs
+        id: stack-outputs
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name cloudauditor-${{ matrix.environment }} \
+            --query 'Stacks[0].Outputs' \
+            --output json > stack-outputs.json
+          cat stack-outputs.json
+
+      - name: Upload stack outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: stack-outputs-${{ matrix.environment }}
+          path: stack-outputs.json
+          retention-days: 30
+
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Stack:** cloudauditor-${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Stack Outputs" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat stack-outputs.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  post-deploy-tests:
+    name: Post-Deployment Tests
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        environment:
+          - ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod' || 'dev') }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Test Manager Lambda
+        run: |
+          aws lambda invoke \
+            --function-name cloudauditor-manager-${{ matrix.environment }} \
+            --payload '{"test": true}' \
+            --cli-binary-format raw-in-base64-out \
+            response.json
+          cat response.json
+
+      - name: Test Resource Discovery Lambda
+        run: |
+          aws lambda invoke \
+            --function-name cloudauditor-discovery-${{ matrix.environment }} \
+            --payload '{"test": true}' \
+            --cli-binary-format raw-in-base64-out \
+            response.json
+          cat response.json
+
+      - name: Check CloudWatch Logs
+        run: |
+          echo "Recent logs from Manager function:"
+          aws logs tail /aws/lambda/cloudauditor-manager-${{ matrix.environment }} --since 5m --format short || true
+          
+          echo "Recent logs from Discovery function:"
+          aws logs tail /aws/lambda/cloudauditor-discovery-${{ matrix.environment }} --since 5m --format short || true
