@@ -4,7 +4,50 @@
 
 ### Option 1: GitHub Actions (Recommended)
 
-1. **Fork/Clone Repository**
+**Prerequisites:** GitHub repository with Actions enabled, AWS account
+
+#### Step 1: Create S3 Deployment Bucket
+
+GitHub Actions needs an S3 bucket to store deployment artifacts:
+
+```bash
+# For dev environment
+aws s3 mb s3://cloudauditor-deployments-dev --region us-east-2
+
+# Optional: For staging/prod
+aws s3 mb s3://cloudauditor-deployments-staging --region us-east-2
+aws s3 mb s3://cloudauditor-deployments-prod --region us-east-2
+```
+
+#### Step 2: Configure GitHub Secrets
+
+1. Go to your GitHub repository
+2. Click **Settings** → **Secrets and variables** → **Actions**
+3. Click **New repository secret** and add each of these:
+
+| Secret Name | Value | Example |
+|-------------|-------|---------|
+| `AWS_ACCESS_KEY_ID` | Your AWS access key | `AKIAIOSFODNN7EXAMPLE` |
+| `AWS_SECRET_ACCESS_KEY` | Your AWS secret key | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
+| `DB_PASSWORD` | Database master password | `MySecurePass123!` |
+
+**Important:** 
+- Password must be at least 8 characters
+- Use a strong, unique password
+- Don't use special characters that might cause shell issues: `"`, `'`, `` ` ``, `$`, `\`
+
+#### Step 3: Trigger Deployment
+
+The workflow automatically deploys when you push to specific branches:
+
+**Option A: Push to develop (deploys to dev)**
+```bash
+git add .
+git commit -m "Initial deployment"
+git push origin develop
+```
+
+**Option B: Push to main (deploys to prod)**
 ```bash
 git clone <your-repo-url>
 cd cloudauditor
@@ -145,16 +188,11 @@ aws logs tail /aws/lambda/cloudauditor-manager-dev
 ## 🎯 Next Steps
 
 1. Deploy to dev environment
-2. Wait ~15 minutes for Aurora cluster creation
-3. Initialize database schema (see [DATABASE.md](docs/DATABASE.md))
-4. Test Lambda functions
-5. Review CloudWatch Logs
-6. Deploy to production when ready
-7. Set up monitoring and alerts
+2. Test Lambda functions
+3. Review CloudWatch Logs
+4. Deploy to production when ready
+5. Set up monitoring and alerts
 
 ---
 
-**Need help?** 
-- [DEPLOYMENT.md](docs/DEPLOYMENT.md) - Detailed deployment guide
-- [DATABASE.md](docs/DATABASE.md) - Database setup and management
-- [DATABASE_AUTOMATION.md](docs/DATABASE_AUTOMATION.md) - Infrastructure overview
+**Need help?** See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed instructions.
