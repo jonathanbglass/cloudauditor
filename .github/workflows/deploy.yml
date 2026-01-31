@@ -98,7 +98,8 @@ jobs:
           sam package \
             --output-template-file packaged.yaml \
             --s3-bucket cloudauditor-deployments-${{ matrix.environment }} \
-            --s3-prefix ${{ github.sha }}
+            --s3-prefix ${{ github.sha }} \
+            --region ${{ env.AWS_REGION }}
 
       - name: Upload packaged template
         uses: actions/upload-artifact@v4
