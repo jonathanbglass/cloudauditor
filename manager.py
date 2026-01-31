@@ -1,103 +1,204 @@
-from __future__ import print_function
+"""
+AWS Lambda Manager Function
+Generates SNS messages for each account and process type to trigger auditing.
+"""
+import json
+import logging
+import os
+import sys
+from typing import Tuple, List, Optional
+
 import boto3
 from botocore.exceptions import ClientError
-import json
 import psycopg2
-import sys, os
+from psycopg2.extensions import cursor as Cursor, connection as Connection
 
-def connect_to_db():
-    print ("Connecting to database")
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+
+def connect_to_db() -> Tuple[Optional[Cursor], Optional[Connection]]:
+    """
+    Connect to PostgreSQL database using environment variables.
+    
+    Returns:
+        Tuple of (cursor, connection) or (None, None) on failure
+    """
+    logger.info("Connecting to database")
     try:
-        connstring = "dbname='" + os.environ['dbname'] + "' user='" + os.environ['dbuser'] + "' host='" + os.environ['dbhost'] + "' password='" + os.environ['dbpass'] + "'"
+        connstring = (
+            f"dbname='{os.environ['dbname']}' "
+            f"user='{os.environ['dbuser']}' "
+            f"host='{os.environ['dbhost']}' "
+            f"password='{os.environ['dbpass']}'"
+        )
         conn = psycopg2.connect(connstring)
         cur = conn.cursor()
         conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        logger.info("Database connection successful")
+        return cur, conn
     except psycopg2.DatabaseError as exception:
-        print (exception)
+        logger.error(f"Database error: {exception}")
         sys.exit(1)
-    print ("Database connection successful")
-    return cur, conn
 
-def grab_roles(cur):
+
+def grab_roles(cur: Cursor) -> List[Tuple[str, str]]:
+    """
+    Retrieve cross-account roles from database.
+    
+    Args:
+        cur: Database cursor
+        
+    Returns:
+        List of (account_id, role_arn) tuples
+    """
     try:
-        cur.execute("SELECT aws_account_id, role_arn from aws_cross_account_roles")
+        cur.execute("SELECT aws_account_id, role_arn FROM aws_cross_account_roles")
+        roles = cur.fetchall()
+        logger.info(f"Retrieved {len(roles)} cross-account roles")
+        return roles
     except psycopg2.DatabaseError as exception:
-        print (exception)
+        logger.error(f"Database error: {exception}")
         sys.exit(1)
-    roles = cur.fetchall()
-    return roles
 
-def process_remote(cur, account, arn, session, process_item):
-    # need to accept AssumeRole session variable, grab the keys, and run a 
-    #   data collection session
-    # Update the cross account table and indicate we've used this account now and it's working
+
+def process_remote(cur: Cursor, account: str, arn: str, session: dict, process_item: str) -> None:
+    """
+    Process a remote AWS account using assumed role credentials.
+    
+    Args:
+        cur: Database cursor
+        account: AWS account ID
+        arn: Role ARN to assume
+        session: STS session credentials
+        process_item: Type of resource to process
+    """
     try:
-        thisiam = boto3.client('iam',
+        thisiam = boto3.client(
+            'iam',
             aws_access_key_id=session['Credentials']['AccessKeyId'],
             aws_secret_access_key=session['Credentials']['SecretAccessKey'],
-            aws_session_token=session['Credentials']['SessionToken'])
+            aws_session_token=session['Credentials']['SessionToken']
+        )
     except ClientError as e:
-        print (e.response['Error']['Code'])
+        logger.error(f"IAM client error: {e.response['Error']['Code']}")
         try:
-            cur.execute("UPDATE aws_cross_account_roles set working = %s, last_used_ts = %s "
-                    "where role_arn = %s", (True, "now()", arn))
+            cur.execute(
+                "UPDATE aws_cross_account_roles SET working = %s, last_used_ts = %s WHERE role_arn = %s",
+                (True, "now()", arn)
+            )
         except psycopg2.DatabaseError as exception:
-            print (exception)
+            logger.error(f"Database error: {exception}")
             sys.exit(1)
         sys.exit(1)
-    print("Processing AWS Account ID: " + str(account))
+    
+    logger.info(f"Processing AWS Account ID: {account}")
     process_aws(thisiam, cur, account, process_item)
-    return
 
-def process_aws(thisiam, cur, account, process_item):
-    if (process_item == "process_instances"):
+
+def process_aws(thisiam, cur: Cursor, account: str, process_item: str) -> None:
+    """
+    Process AWS resources based on process_item type.
+    
+    Args:
+        thisiam: IAM client
+        cur: Database cursor
+        account: AWS account ID
+        process_item: Type of resource to process
+    """
+    # Import process modules dynamically to avoid circular dependencies
+    if process_item == "process_instances":
+        import process_instances
         process_instances.process(thisiam, cur, account)
-    if (process_item == "process_roles"):
+    elif process_item == "process_roles":
+        import process_roles
         process_roles.process(thisiam, cur, account)
-    if (process_item == "process_users"):
+    elif process_item == "process_users":
+        import process_users
         process_users.process(thisiam, cur, account)
-    if (process_item == "process_groups"):
+    elif process_item == "process_groups":
+        import process_groups
         process_groups.process(thisiam, cur, account)
-    if (process_item == "process_policies"):
+    elif process_item == "process_policies":
+        import process_policies
         process_policies.process(thisiam, cur, account)
-    return
 
-def process_local(cur, process_item):
+
+def process_local(cur: Cursor, process_item: str) -> None:
+    """
+    Process local AWS account resources.
+    
+    Args:
+        cur: Database cursor
+        process_item: Type of resource to process
+    """
     try:
         account = boto3.client('sts').get_caller_identity()['Account']
+        logger.info(f"Processing local AWS Account ID: {account}")
     except ClientError as e:
-       print (e.response['Error']['Code'])
-       sys.exit(1)
-    print("Processing AWS Account ID: " + str(account))
+        logger.error(f"STS error: {e.response['Error']['Code']}")
+        sys.exit(1)
+    
     try:
         thisiam = boto3.client('iam')
     except ClientError as e:
-       print (e.response['Error']['Code'])
-       sys.exit(1)
+        logger.error(f"IAM client error: {e.response['Error']['Code']}")
+        sys.exit(1)
+    
     process_aws(thisiam, cur, account, process_item)
-    return
 
-def lambda_handler(event, context):
-    # setup -> all function calls will require database access
-    cur = ""
+
+def lambda_handler(event: dict, context) -> None:
+    """
+    Lambda handler function to generate SNS messages for account auditing.
+    
+    Args:
+        event: Lambda event data
+        context: Lambda context object
+    """
+    # Setup - connect to database
     cur, conn = connect_to_db()
-    # list of processes
-    # create a list of processes: in the future collect this data from a DB
-    process_list = [ "process_instances","process_roles","process_users","process_groups", "process_policies"]
+    
+    # List of processes
+    process_list = [
+        "process_instances",
+        "process_roles",
+        "process_users",
+        "process_groups",
+        "process_policies"
+    ]
 
-    # generate rolearns and put them in the SNS topic
-    print ("Process Accounts in Database")
+    # Generate role ARNs and put them in the SNS topic
+    logger.info("Processing accounts in database")
     roles = grab_roles(cur)
+    
+    sns_topic_arn = os.getenv(
+        'SNS_TOPIC_ARN',
+        'arn:aws:sns:us-east-1:987569341137:iso-cloud-auditor'
+    )
+    
     for proc in process_list:
-        # now i need to iterate over the roles and place messages on SNS
-        for account, rolearn  in roles:
-            thislist = {"rolearn": rolearn, "account": account, "process_item": proc}
-            # insert into SNS here
-            print ("Message: {}".format(json.dumps(thislist)))
-            snsclient = boto3.client('sns')
-            topicarn = "arn:aws:sns:us-east-1:987569341137:iso-cloud-auditor"
-            snsresponse = snsclient.publish(TopicArn=topicarn, Message=json.dumps(thislist))
-            print ("Response: {}".format(snsresponse))
+        # Iterate over roles and place messages on SNS
+        for account, rolearn in roles:
+            message = {
+                "rolearn": rolearn,
+                "account": account,
+                "process_item": proc
+            }
+            
+            logger.info(f"Publishing message: {json.dumps(message)}")
+            
+            try:
+                snsclient = boto3.client('sns')
+                snsresponse = snsclient.publish(
+                    TopicArn=sns_topic_arn,
+                    Message=json.dumps(message)
+                )
+                logger.info(f"SNS Response: {snsresponse}")
+            except ClientError as e:
+                logger.error(f"SNS publish error: {e}")
+    
     cur.close()
     conn.close()
-    return
+    logger.info("Manager function complete")
