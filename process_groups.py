@@ -24,4 +24,4 @@ def process(thisiam, cur, accountid):
                     (accountid, json.dumps(z, default=str), z['Path'],
                     z['CreateDate'], z['GroupName'], z['GroupId'],
                     z['Arn']))
-    return;
+    return

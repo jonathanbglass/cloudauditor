@@ -16,7 +16,7 @@ def connect_to_db():
         print (exception)
         sys.exit(1)
     print ("Database connection successful")
-    return cur, conn;
+    return cur, conn
 
 def grab_roles(cur):
     try:
@@ -25,7 +25,7 @@ def grab_roles(cur):
         print (exception)
         sys.exit(1)
     roles = cur.fetchall()
-    return roles;
+    return roles
 
 def process_remote(cur, account, arn, session, process_item):
     # need to accept AssumeRole session variable, grab the keys, and run a 
@@ -47,7 +47,7 @@ def process_remote(cur, account, arn, session, process_item):
         sys.exit(1)
     print("Processing AWS Account ID: " + str(account))
     process_aws(thisiam, cur, account, process_item)
-    return;
+    return
 
 def process_aws(thisiam, cur, account, process_item):
     if (process_item == "process_instances"):
@@ -60,7 +60,7 @@ def process_aws(thisiam, cur, account, process_item):
         process_groups.process(thisiam, cur, account)
     if (process_item == "process_policies"):
         process_policies.process(thisiam, cur, account)
-    return;
+    return
 
 def process_local(cur, process_item):
     try:
@@ -75,7 +75,7 @@ def process_local(cur, process_item):
        print (e.response['Error']['Code'])
        sys.exit(1)
     process_aws(thisiam, cur, account, process_item)
-    return;
+    return
 
 def lambda_handler(event, context):
     # setup -> all function calls will require database access
@@ -100,4 +100,4 @@ def lambda_handler(event, context):
             print ("Response: {}".format(snsresponse))
     cur.close()
     conn.close()
-    return;
+    return

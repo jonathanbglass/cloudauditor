@@ -41,7 +41,7 @@ def process(thisiam, cur, accountid):
             for z in tags:
                 try:
                         cur.execute("EXECUTE tagplan (%s, %s, %s, %s, %s, %s)", (accountid, "now()", z['ResourceType'], z['ResourceId'], z['Key'], z['Value']))
-                except:
-                    print(z)
+                except Exception as e:
+                    print(z, "Error:", str(e))
                     pass
-    return;
+    return

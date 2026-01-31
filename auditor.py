@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import argparse
 import boto3
+from botocore.exceptions import ClientError
 import process_instances
 import process_roles
 import process_groups
@@ -91,8 +92,8 @@ def main():
             client = boto3.client('sts')
             try:
                 session = client.assume_role(RoleArn=arn, RoleSessionName='Session' + str(account))
-            except:
-                print("Failure ", account, arn)
+            except ClientError as e:
+                print("Failure:", account, arn, str(e))
                 sql = "UPDATE aws_cross_account_roles set working = false where role_arn = '" + arn + "';"
                 cur.execute(sql)
                 continue

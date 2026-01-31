@@ -28,4 +28,4 @@ def process(thisiam, cur, accountid):
                     (accountid, json.dumps(z, default=str), PasswordLastUsedTS,
                     z['Path'], z['CreateDate'], z['UserName'], z['UserId'],
                     z['Arn']))
-    return;
+    return

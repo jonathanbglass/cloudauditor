@@ -26,4 +26,4 @@ def process(thisiam, cur, accountid):
                     json.dumps(z['AssumeRolePolicyDocument'],default=str), 
                     z['Path'], z['CreateDate'], z['RoleName'], z['RoleId'], 
                     z['Arn']) )
-    return;
+    return
