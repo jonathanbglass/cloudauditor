@@ -490,6 +490,41 @@ Resources:
             Description: Daily resource discovery
             Enabled: true
 
+  # Database Initialization Lambda Function
+  DatabaseInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-db-init-${Environment}
+      CodeUri: database_init/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Description: Initialize CloudAuditor database schema
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 60
+      MemorySize: 256
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
+
+  # Custom Resource to trigger database initialization
+  DatabaseInitializer:
+    Type: Custom::DatabaseInit
+    DependsOn:
+      - AuroraInstance
+      - DatabaseSecret
+    Properties:
+      ServiceToken: !GetAtt DatabaseInitFunction.Arn
+      Timestamp: !Ref AWS::StackId  # Force update on stack changes
+            Enabled: true
+
   # SNS Topic Permission for Processor Lambda
   ProcessorFunctionInvokePermission:
     Type: AWS::Lambda::Permission
