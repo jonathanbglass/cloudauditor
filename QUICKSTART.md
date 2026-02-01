@@ -2,24 +2,26 @@
 
 ## 🚀 Deploy in 5 Minutes
 
-### Option 1: GitHub Actions (Recommended)
+### Prerequisites
+- GitHub repository with Actions enabled
+- AWS account with appropriate permissions
+- Strong database password (min 8 characters)
 
-**Prerequisites:** GitHub repository with Actions enabled, AWS account
+### Step 1: Create S3 Deployment Buckets
 
-#### Step 1: Create S3 Deployment Bucket
-
-GitHub Actions needs an S3 bucket to store deployment artifacts:
+GitHub Actions needs S3 buckets to store deployment artifacts:
 
 ```bash
-# For dev environment
-aws s3 mb s3://cloudauditor-deployments-dev --region us-east-1
+# For dev environment (required)
+aws s3 mb s3://cloudauditor-artifacts-2026 --region us-east-1
+aws s3 mb s3://cloudauditor-sam-deploy-2026 --region us-east-1
 
 # Optional: For staging/prod
-aws s3 mb s3://cloudauditor-deployments-staging --region us-east-1
-aws s3 mb s3://cloudauditor-deployments-prod --region us-east-1
+aws s3 mb s3://cloudauditor-artifacts-staging --region us-east-1
+aws s3 mb s3://cloudauditor-artifacts-prod --region us-east-1
 ```
 
-#### Step 2: Configure GitHub Secrets
+### Step 2: Configure GitHub Secrets
 
 1. Go to your GitHub repository
 2. Click **Settings** → **Secrets and variables** → **Actions**
@@ -36,40 +38,31 @@ aws s3 mb s3://cloudauditor-deployments-prod --region us-east-1
 - Use a strong, unique password
 - Don't use special characters that might cause shell issues: `"`, `'`, `` ` ``, `$`, `\`
 
-#### Step 3: Trigger Deployment
+### Step 3: Trigger Deployment
 
 The workflow automatically deploys when you push to specific branches:
 
-**Option A: Push to develop (deploys to dev)**
+**Deploy to dev environment:**
 ```bash
 git add .
 git commit -m "Initial deployment"
 git push origin develop
 ```
 
-**Option B: Push to main (deploys to prod)**
+**Deploy to production:**
 ```bash
-git clone <your-repo-url>
-cd cloudauditor
+git push origin main
 ```
 
-2. **Set GitHub Secrets**
-   - Go to Settings → Secrets → Actions
-   - Add these secrets:
-     - `AWS_ACCESS_KEY_ID` - Your AWS access key
-     - `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
-     - `DB_PASSWORD` - Database master password (min 8 characters)
+### Step 4: Monitor Deployment
 
-   **Note:** Database infrastructure (Aurora, VPC, etc.) is created automatically!
+1. Go to **Actions** tab in your GitHub repository
+2. Watch the deployment workflow run (~20 minutes)
+3. Check for successful completion
 
-3. **Push to Deploy**
-```bash
-git push origin develop  # Deploys to dev
-```
+**That's it!** The database schema is automatically initialized during deployment.
 
-Done! Check AWS Lambda console for your functions.
-
-### Option 2: Local SAM Deployment
+## Option 2: Local SAM Deployment
 
 1. **Install SAM CLI**
 ```bash
@@ -107,12 +100,18 @@ Done!
 - ✅ **Security Groups** for Lambda and Aurora
 
 ### Database
-- ✅ **Aurora Serverless v2** PostgreSQL cluster (0.5-2 ACUs)
+- ✅ **Aurora Serverless v2** PostgreSQL 15.8 cluster (0.5-2 ACUs)
+- ✅ **Automatic schema initialization** via Lambda custom resource
 - ✅ **Secrets Manager** for database credentials
+- ✅ **Data API enabled** for RDS Query Editor access
 - ✅ **Automated backups** with 7-day retention
 
 ### Compute & Events
-- ✅ **3 Lambda Functions** (Manager, Processor, Discovery)
+- ✅ **4 Lambda Functions**
+  - Manager - Orchestrates discovery runs
+  - Processor - Processes discovered resources
+  - Discovery - Discovers AWS resources
+  - DB Init - Initializes database schema automatically
 - ✅ **SNS Topic** for inter-Lambda communication
 - ✅ **EventBridge Rules** (scheduled triggers)
 - ✅ **CloudWatch Logs** with 30-day retention
@@ -125,14 +124,22 @@ Done!
 ## 🧪 Test Your Deployment
 
 ```bash
-# Test Manager Lambda
+# Test Discovery Lambda
 aws lambda invoke \
-  --function-name cloudauditor-manager-dev \
-  --payload '{"test": true}' \
+  --function-name cloudauditor-discovery-dev \
+  --region us-east-1 \
+  --payload '{}' \
   response.json
 
 # View logs
-aws logs tail /aws/lambda/cloudauditor-manager-dev --follow
+aws logs tail /aws/lambda/cloudauditor-discovery-dev --follow
+
+# Query database (RDS Query Editor)
+# The schema is automatically created - just run queries!
+SELECT resource_type, COUNT(*) as count 
+FROM resources 
+GROUP BY resource_type 
+ORDER BY count DESC;
 ```
 
 ## 📚 Full Documentation
