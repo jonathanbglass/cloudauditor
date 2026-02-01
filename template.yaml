@@ -423,53 +423,11 @@ Resources:
                   - rds-db:connect
                 Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${AuroraCluster}/${DatabaseMasterUsername}'
               
-              # SNS publishing
+              # SNS publishing (for future use)
               - Effect: Allow
                 Action:
                   - sns:Publish
-                Resource: !Ref AuditorTopic
-
-  # SNS Topic for Lambda communication
-  AuditorTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      TopicName: !Sub cloudauditor-topic-${Environment}
-      DisplayName: CloudAuditor Processing Topic
-
-  # Manager Lambda Function
-  ManagerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub cloudauditor-manager-${Environment}
-      CodeUri: .
-      Handler: manager.lambda_handler
-      Description: CloudAuditor Manager - Initiates audit scans
-      Role: !GetAtt CloudAuditorLambdaRole.Arn
-      Environment:
-        Variables:
-          SNS_TOPIC_ARN: !Ref AuditorTopic
-      Events:
-        ScheduledEvent:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 2 * * ? *)  # Daily at 2 AM UTC
-            Description: Daily audit scan
-            Enabled: true
-
-  # Processor Lambda Function
-  ProcessorFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub cloudauditor-processor-${Environment}
-      CodeUri: .
-      Handler: processor.lambda_handler
-      Description: CloudAuditor Processor - Processes audit data
-      Role: !GetAtt CloudAuditorLambdaRole.Arn
-      Events:
-        SNSEvent:
-          Type: SNS
-          Properties:
-            Topic: !Ref AuditorTopic
+                Resource: '*'
 
   # Resource Discovery Lambda Function
   ResourceDiscoveryFunction:
