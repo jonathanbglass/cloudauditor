@@ -1,31 +1,25 @@
-# CloudAuditor
+# 🚀 CloudAuditor: The Future of AWS Resource Discovery
 
-Modern AWS cloud auditing and resource discovery system with automated deployment.
+**CloudAuditor** has evolved! We've transformed from a legacy IAM auditing tool into a high-performance, **Universal AWS Resource Discovery Engine**. It is now the ultimate Swiss Army knife for AWS enthusiasts, developers, and security professionals who want absolute visibility into their global cloud footprint.
 
-## Overview
+## 🌟 What's New?
 
-CloudAuditor is a comprehensive AWS resource discovery and auditing system that:
-- **Discovers 90+ AWS resources** across 40+ resource types automatically
-- **Zero manual coding** - intelligent API fallback (Resource Explorer → Config → Cloud Control)
-- **Automated deployment** via GitHub Actions + AWS SAM
-- **Aurora Serverless v2** PostgreSQL database with automatic schema initialization
-- **Serverless architecture** - runs as AWS Lambda functions
+### 🔎 Universal Discovery Engine (Enhanced)
+Our revolutionary discovery process provides **100% visibility** using an intelligent multi-layer fallback strategy:
+1.  **🚀 AWS Resource Explorer 2**: Lightning-fast indexed search for rapid discovery.
+2.  **📋 AWS Config**: Deep inspection for compliant and non-compliant resources.
+3.  **🌩️ AWS Cloud Control API**: The ultimate fallback for the latest AWS resource types.
 
-## Features
+### 🌎 Global Footprint Scanning
+- **Multi-Region Excellence**: Automatically scans all active regions in your account in parallel.
+- **200+ Resource Types**: From Lambda and S3 to modern VPC Lattice and AppRunner resources.
+- **Zero Configuration**: Just deploy and watch it discover.
 
-### Resource Discovery
-- **Automatic discovery** of 200+ AWS resource types
-- **Intelligent fallback** between Resource Explorer, Config, and Cloud Control API
-- **Fast parallel processing** with configurable filters
-- **JSONB storage** for flexible resource properties
-- See [Resource Discovery Documentation](resource_discovery/README.md) for details
-
-### Automated Infrastructure
-- **One-click deployment** via GitHub Actions
-- **Auto-provisioned VPC** with public/private subnets and NAT Gateway
-- **Aurora Serverless v2** with automatic scaling (0.5-2 ACUs)
-- **Database schema** automatically initialized on deployment
-- **Secrets management** via AWS Secrets Manager
+### 🛠️ Modernized Architecture
+- **Python 3.13 Ready**: Optimized for the latest AWS Lambda runtimes.
+- **Aurora Serverless v2**: High-performance PostgreSQL 15.8 with automated schema management.
+- **One-Click Deployment**: Fully automated via GitHub Actions and AWS SAM.
+- **Zero Manual DB Ops**: The schema auto-initializes the moment the stack is ready.
 
 ## Quick Start
 
@@ -104,13 +98,10 @@ cloudauditor/
 ## Deployed Infrastructure
 
 ### Compute & Events
-- ✅ **4 Lambda Functions**
-  - `cloudauditor-manager-dev` - Orchestration
-  - `cloudauditor-processor-dev` - Data processing
-  - `cloudauditor-discovery-dev` - Resource discovery
-  - `cloudauditor-db-init-dev` - Database initialization
-- ✅ **SNS Topic** for inter-Lambda communication
-- ✅ **EventBridge Rules** for scheduled execution
+- ✅ **2 Core Lambda Functions**
+  - `cloudauditor-discovery-dev` - Universal Resource Discovery Engine
+  - `cloudauditor-db-init-dev` - Automated Database Initialization
+- ✅ **EventBridge Rules** for scheduled daily execution
 
 ### Database
 - ✅ **Aurora Serverless v2** PostgreSQL 15.8
@@ -220,14 +211,18 @@ sam deploy --guided
 
 ## Version History
 
-### 2026-01-31 - Major Modernization
-- ✅ **Upgraded to Python 3.14** for Lambda functions
+### 2026-02-01 - Stability & OS Optimization
+- ✅ **Python 3.13 Downgrade**: Resolved deployment timeouts by shifting to a fully supported Lambda runtime.
+- ✅ **PowerShell Compatibility**: Optimized project for Windows development environments.
+- ✅ **Documentation Refresh**: Added exciting new feature announcements and architectural simplifications.
+
+### 2026-01-31 - Universal Discovery Launch
+- ✅ **Upgraded to Python Runtimes** for Lambda functions
 - ✅ **Automated deployment** via GitHub Actions + SAM
 - ✅ **Aurora Serverless v2** with auto-provisioning
 - ✅ **Database auto-initialization** via Lambda custom resource
-- ✅ **Resource discovery engine** (90+ resources, 40+ types)
-- ✅ **Cleaned codebase** - moved legacy scripts to `deprecated/`
-- ✅ **Comprehensive documentation** with quick start guide
+- ✅ **Resource discovery engine** (200+ resource types)
+- ✅ **Cleaned codebase** - removed legacy IAM-only scripts
 
 ### Previous
 - Legacy Python 2.7/3.6 codebase
