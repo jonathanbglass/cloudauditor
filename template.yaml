@@ -482,27 +482,7 @@ Resources:
       ServiceToken: !GetAtt DatabaseInitFunction.Arn
       Timestamp: !Ref AWS::StackId  # Force update on stack changes
 
-  # SNS Topic Permission for Processor Lambda
-  ProcessorFunctionInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref ProcessorFunction
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref AuditorTopic
-
   # CloudWatch Log Groups with retention
-  ManagerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/cloudauditor-manager-${Environment}
-      RetentionInDays: 30
-
-  ProcessorLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/cloudauditor-processor-${Environment}
-      RetentionInDays: 30
 
   DiscoveryLogGroup:
     Type: AWS::Logs::LogGroup
@@ -511,29 +491,11 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
-  ManagerFunctionArn:
-    Description: Manager Lambda Function ARN
-    Value: !GetAtt ManagerFunction.Arn
-    Export:
-      Name: !Sub ${AWS::StackName}-ManagerFunctionArn
-
-  ProcessorFunctionArn:
-    Description: Processor Lambda Function ARN
-    Value: !GetAtt ProcessorFunction.Arn
-    Export:
-      Name: !Sub ${AWS::StackName}-ProcessorFunctionArn
-
   ResourceDiscoveryFunctionArn:
     Description: Resource Discovery Lambda Function ARN
     Value: !GetAtt ResourceDiscoveryFunction.Arn
     Export:
       Name: !Sub ${AWS::StackName}-ResourceDiscoveryFunctionArn
-
-  SNSTopicArn:
-    Description: SNS Topic ARN
-    Value: !Ref AuditorTopic
-    Export:
-      Name: !Sub ${AWS::StackName}-SNSTopicArn
 
   LambdaRoleArn:
     Description: Lambda Execution Role ARN
