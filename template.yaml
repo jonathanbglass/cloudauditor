@@ -410,7 +410,9 @@ Resources:
                 Action:
                   - sts:AssumeRole
                   - sts:GetCallerIdentity
-                Resource: '*'
+                Resource: 
+                  - '*'
+                  - 'arn:aws:iam::*:role/CloudAuditorExecutionRole'
               
               # Secrets Manager access for database credentials
               - Effect: Allow

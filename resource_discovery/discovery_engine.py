@@ -111,6 +111,80 @@ class ResourceDiscoveryEngine:
                 'eu-west-1', 'eu-central-1', 'ap-southeast-1', 'ap-northeast-1'
             ]
     
+    def _get_assumed_role_session(
+        self, 
+        account_id: str, 
+        role_name: str = "CloudAuditorExecutionRole"
+    ) -> boto3.Session:
+        """
+        Get a boto3 session by assuming a role in another account.
+        
+        Args:
+            account_id: Target AWS account ID
+            role_name: Name of the role to assume
+            
+        Returns:
+            Boto3 session with assumed role credentials
+        """
+        role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"
+        sts = self.session.client('sts')
+        
+        logger.info(f"Assuming role {role_arn}...")
+        response = sts.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName=f"CloudAuditorDiscovery-{account_id}"
+        )
+        
+        credentials = response['Credentials']
+        return boto3.Session(
+            aws_access_key_id=credentials['AccessKeyId'],
+            aws_secret_access_key=credentials['SecretAccessKey'],
+            aws_session_token=credentials['SessionToken'],
+            region_name=self.session.region_name
+        )
+
+    def discover_organization_resources(self, accounts: List[str]) -> DiscoveryResult:
+        """
+        Discover resources across multiple accounts.
+        
+        Args:
+            accounts: List of AWS Account IDs
+            
+        Returns:
+            Aggregate DiscoveryResult
+        """
+        total_result = DiscoveryResult(resources=[], total_count=0, success=True)
+        start_time = time.time()
+        
+        for account_id in accounts:
+            try:
+                logger.info(f"--- Starting discovery for account: {account_id} ---")
+                
+                # If target is local account, use current session
+                sts = self.session.client('sts')
+                local_account = sts.get_caller_identity()['Account']
+                
+                if account_id == local_account:
+                    engine = self
+                else:
+                    target_session = self._get_assumed_role_session(account_id)
+                    engine = ResourceDiscoveryEngine(session=target_session, config=self.config)
+                
+                result = engine.discover_all_resources(account_id=account_id)
+                total_result.resources.extend(result.resources)
+                total_result.errors.extend(result.errors)
+                
+            except Exception as e:
+                error_msg = f"Failed to discover account {account_id}: {str(e)}"
+                logger.error(error_msg)
+                total_result.add_error(error_msg)
+        
+        total_result.total_count = len(total_result.resources)
+        total_result.duration_seconds = time.time() - start_time
+        total_result.success = len(total_result.errors) == 0
+        
+        return total_result
+
     def discover_all_resources(
         self,
         account_id: Optional[str] = None
@@ -124,6 +198,10 @@ class ResourceDiscoveryEngine:
         Returns:
             DiscoveryResult with all discovered resources
         """
+        # If config specifies multiple accounts and we are in the hub, delegate
+        if self.config.accounts and not account_id:
+            return self.discover_organization_resources(self.config.accounts)
+
         start_time = time.time()
         
         # Auto-detect account ID if not provided

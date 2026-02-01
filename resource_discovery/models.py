@@ -61,6 +61,9 @@ class DiscoveryConfig:
     # Region configuration
     regions: Optional[List[str]] = None  # None = all regions
     
+    # Account configuration
+    accounts: Optional[List[str]] = None  # None = only local account
+    
     # Performance tuning
     batch_size: int = 100
     max_workers: int = 10

@@ -1,0 +1,57 @@
+# Multi-Account Setup Guide
+
+This guide describes how to configure CloudAuditor to scan multiple AWS accounts within an Organization.
+
+## 1. Deploy the Spoke Role
+The `CloudAuditorExecutionRole` must be deployed to every member account you wish to scan.
+
+### Via CloudFormation StackSets (Recommended)
+1. Use the [spoke-role.yaml](../infrastructure/spoke-role.yaml) template.
+2. Parameter `HubAccountId`: Enter your main CloudAuditor account ID.
+3. Deploy as a Service-Managed StackSet across your entire Organization or specific OUs.
+
+### Via Terraform
+```hcl
+resource "aws_iam_role" "cloudauditor_spoke" {
+  name = "CloudAuditorExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        AWS = "arn:aws:iam::<HUB_ACCOUNT_ID>:role/cloudauditor-lambda-role-dev"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "read_only" {
+  name = "CloudAuditorReadOnly"
+  role = aws_iam_role.cloudauditor_spoke.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = [
+        "iam:Get*", "iam:List*", "ec2:Describe*", "rds:Describe*",
+        "resource-explorer-2:Search", "resource-explorer-2:ListIndexes"
+      ]
+      Effect   = "Allow"
+      Resource = "*"
+    }]
+  })
+}
+```
+
+## 2. Cross-Account Architecture
+CloudAuditor uses a "Hub and Spoke" model:
+1. **Hub**: The primary account where the Discovery Lambda lives.
+2. **Spoke**: Member accounts containing the resources.
+
+The Hub Lambda performs `sts:AssumeRole` to obtain temporary credentials for each Spoke, then executes discovery as if it were local to that account.
+
+## 3. Troubleshooting
+- **AccessDenied on AssumeRole**: Ensure the `HubAccountId` in the spoke role is correct.
+- **ResourceExplorer Errors**: Verify that Resource Explorer 2 is enabled in the spoke account and an index exists.
