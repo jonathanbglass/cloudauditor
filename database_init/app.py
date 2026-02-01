@@ -5,8 +5,7 @@ Automatically creates database schema when CloudFormation stack is deployed
 import json
 import os
 import boto3
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import psycopg
 import urllib3
 
 http = urllib3.PoolManager()
@@ -94,16 +93,16 @@ CREATE INDEX IF NOT EXISTS idx_discovery_runs_status ON public.discovery_runs(st
 """
     
     try:
-        # Connect to database
-        conn = psycopg2.connect(
+        # Connect to database with autocommit
+        conn = psycopg.connect(
             host=db_host,
             port=db_port,
-            database=db_name,
+            dbname=db_name,
             user=db_user,
             password=db_password,
-            connect_timeout=10
+            connect_timeout=10,
+            autocommit=True
         )
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         
         # Execute schema
         cursor = conn.cursor()
