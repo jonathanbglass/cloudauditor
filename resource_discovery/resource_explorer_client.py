@@ -38,6 +38,9 @@ class ResourceExplorerClient:
         try:
             response = self.client.list_indexes()
             return len(response.get('Indexes', [])) > 0
+        except ClientError as e:
+            logger.error(f"Error checking Resource Explorer index: {e}")
+            return False
     
     def is_aggregator_index(self) -> bool:
         """
@@ -57,9 +60,6 @@ class ResourceExplorerClient:
                 logger.warning("No Resource Explorer index found in this region")
             else:
                 logger.error(f"Error checking index type: {e}")
-            return False
-        except ClientError as e:
-            logger.error(f"Error checking Resource Explorer index: {e}")
             return False
     
     def list_all_resources(
