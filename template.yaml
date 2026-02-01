@@ -79,7 +79,7 @@ Conditions:
 
 Globals:
   Function:
-    Runtime: python3.14
+    Runtime: python3.13
     Timeout: 120
     MemorySize: 512
     VpcConfig:
