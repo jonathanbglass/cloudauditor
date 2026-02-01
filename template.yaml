@@ -305,6 +305,7 @@ Resources:
       BackupRetentionPeriod: !If [EnableBackups, !Ref BackupRetentionDays, 1]
       PreferredBackupWindow: '03:00-04:00'
       PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      EnableHttpEndpoint: true  # Enable Data API for Query Editor
       EnableIAMDatabaseAuthentication: true
       ServerlessV2ScalingConfiguration:
         MinCapacity: !Ref AuroraMinCapacity
