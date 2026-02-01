@@ -523,7 +523,6 @@ Resources:
     Properties:
       ServiceToken: !GetAtt DatabaseInitFunction.Arn
       Timestamp: !Ref AWS::StackId  # Force update on stack changes
-            Enabled: true
 
   # SNS Topic Permission for Processor Lambda
   ProcessorFunctionInvokePermission:
