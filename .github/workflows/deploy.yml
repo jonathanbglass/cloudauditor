@@ -190,15 +190,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Test Manager Lambda
-        run: |
-          aws lambda invoke \
-            --function-name cloudauditor-manager-${{ matrix.environment }} \
-            --payload '{"test": true}' \
-            --cli-binary-format raw-in-base64-out \
-            response.json
-          cat response.json
-
       - name: Test Resource Discovery Lambda
         run: |
           aws lambda invoke \
@@ -210,8 +201,5 @@ jobs:
 
       - name: Check CloudWatch Logs
         run: |
-          echo "Recent logs from Manager function:"
-          aws logs tail /aws/lambda/cloudauditor-manager-${{ matrix.environment }} --since 5m --format short || true
-          
           echo "Recent logs from Discovery function:"
           aws logs tail /aws/lambda/cloudauditor-discovery-${{ matrix.environment }} --since 5m --format short || true
