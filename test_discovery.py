@@ -48,14 +48,15 @@ def print_summary(summary: Dict[str, int]):
     print("="*80 + "\n")
 
 
-def test_resource_explorer_only(session=None):
+def test_resource_explorer_only(session=None, regions=None):
     """Test discovery using only Resource Explorer"""
     print("\n🔍 Testing Resource Explorer Only...")
     
     config = DiscoveryConfig(
         use_resource_explorer=True,
         use_config=False,
-        use_cloud_control=False
+        use_cloud_control=False,
+        regions=regions
     )
     
     engine = ResourceDiscoveryEngine(config=config, session=session)
@@ -72,14 +73,15 @@ def test_resource_explorer_only(session=None):
     return result
 
 
-def test_config_only(session=None):
+def test_config_only(session=None, regions=None):
     """Test discovery using only AWS Config"""
     print("\n🔍 Testing AWS Config Only...")
     
     config = DiscoveryConfig(
         use_resource_explorer=False,
         use_config=True,
-        use_cloud_control=False
+        use_cloud_control=False,
+        regions=regions
     )
     
     engine = ResourceDiscoveryEngine(config=config, session=session)
@@ -96,14 +98,15 @@ def test_config_only(session=None):
     return result
 
 
-def test_hybrid_approach(session=None):
+def test_hybrid_approach(session=None, regions=None):
     """Test discovery using hybrid approach (default)"""
     print("\n🔍 Testing Hybrid Approach (Resource Explorer + Config)...")
     
     config = DiscoveryConfig(
         use_resource_explorer=True,
         use_config=True,
-        use_cloud_control=False
+        use_cloud_control=False,
+        regions=regions
     )
     
     engine = ResourceDiscoveryEngine(config=config, session=session)
@@ -130,7 +133,7 @@ def test_hybrid_approach(session=None):
     return result
 
 
-def test_filtered_discovery(session=None):
+def test_filtered_discovery(session=None, regions=None):
     """Test discovery with resource type filters"""
     print("\n🔍 Testing Filtered Discovery (EC2 and S3 only)...")
     
@@ -143,7 +146,8 @@ def test_filtered_discovery(session=None):
             'AWS::EC2::Volume',
             'AWS::EC2::SecurityGroup',
             'AWS::S3::Bucket'
-        ]
+        ],
+        regions=regions
     )
     
     engine = ResourceDiscoveryEngine(config=config, session=session)
@@ -212,6 +216,11 @@ Examples:
         default='hybrid',
         help='Which test to run (default: hybrid)'
     )
+    parser.add_argument(
+        '--regions',
+        nargs='+',
+        help='Specific AWS regions to search (default: all enabled regions). Example: --regions us-east-1 us-west-2'
+    )
     
     args = parser.parse_args()
     
@@ -238,6 +247,12 @@ Examples:
         print(f"   User/Role: {identity['Arn']}")
         print(f"   Region: {session.region_name or 'default'}")
         
+        # Show region configuration
+        if args.regions:
+            print(f"   Searching regions: {', '.join(args.regions)}")
+        else:
+            print(f"   Searching regions: all enabled regions")
+        
     except Exception as e:
         print(f"\n❌ AWS Credentials Error: {e}")
         print("   Please configure AWS credentials and try again.")
@@ -250,13 +265,13 @@ Examples:
     # Run tests
     try:
         if args.test == 'hybrid':
-            result = test_hybrid_approach(session)
+            result = test_hybrid_approach(session, regions=args.regions)
         elif args.test == 'explorer':
-            result = test_resource_explorer_only(session)
+            result = test_resource_explorer_only(session, regions=args.regions)
         elif args.test == 'config':
-            result = test_config_only(session)
+            result = test_config_only(session, regions=args.regions)
         elif args.test == 'filtered':
-            result = test_filtered_discovery(session)
+            result = test_filtered_discovery(session, regions=args.regions)
         
         # Export results
         if result.total_count > 0:

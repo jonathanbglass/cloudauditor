@@ -38,6 +38,26 @@ class ResourceExplorerClient:
         try:
             response = self.client.list_indexes()
             return len(response.get('Indexes', [])) > 0
+    
+    def is_aggregator_index(self) -> bool:
+        """
+        Check if Resource Explorer index is an AGGREGATOR (searches all regions).
+        
+        Returns:
+            True if aggregator index exists, False if LOCAL or no index
+        """
+        try:
+            response = self.client.get_index()
+            index_type = response.get('Type', 'LOCAL')
+            logger.info(f"Resource Explorer index type: {index_type}")
+            return index_type == 'AGGREGATOR'
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == 'ResourceNotFoundException':
+                logger.warning("No Resource Explorer index found in this region")
+            else:
+                logger.error(f"Error checking index type: {e}")
+            return False
         except ClientError as e:
             logger.error(f"Error checking Resource Explorer index: {e}")
             return False
