@@ -4,8 +4,8 @@
 # AWS SDK for Python
 boto3>=1.35.0
 
-# PostgreSQL database adapter
-psycopg2-binary>=2.9.9
+# PostgreSQL database adapter (version 3)
+psycopg[binary]>=3.2.4
 
 # HTML/XML parsing library
 beautifulsoup4>=4.12.0
