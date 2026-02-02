@@ -142,15 +142,58 @@ CREATE INDEX IF NOT EXISTS idx_monitored_accounts_status ON public.monitored_acc
 
 def lambda_handler(event, context):
     """
-    CloudFormation Custom Resource handler for database initialization
+    Database initialization handler
+    Supports both CloudFormation Custom Resource events and manual invocations
     """
     print(f"Event: {json.dumps(event)}")
     
     try:
-        request_type = event['RequestType']
+        # Detect if this is a CloudFormation event or manual invocation
+        is_cfn_event = 'RequestType' in event and 'StackId' in event
         
-        # Only initialize on Create, skip on Update/Delete
-        if request_type == 'Create':
+        if is_cfn_event:
+            # CloudFormation Custom Resource mode
+            request_type = event['RequestType']
+            
+            # Only initialize on Create, skip on Update/Delete
+            if request_type == 'Create':
+                # Get database connection info from environment
+                secret_arn = os.environ['DB_SECRET_ARN']
+                db_host = os.environ['DB_HOST']
+                db_name = os.environ['DB_NAME']
+                region = os.environ['AWS_REGION']
+                
+                # Get credentials from Secrets Manager
+                secret = get_secret(secret_arn, region)
+                db_user = secret['username']
+                db_password = secret['password']
+                
+                # Initialize database
+                success, message = initialize_database(db_host, db_name, db_user, db_password)
+                
+                send_response(event, context, 'SUCCESS', {
+                    'Message': message,
+                    'Tables': 'resources, monitored_accounts'
+                })
+                
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({'success': True, 'message': message})
+                }
+            else:
+                # For Update/Delete, just return success
+                send_response(event, context, 'SUCCESS', {
+                    'Message': f'{request_type} - No action needed'
+                })
+                
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({'success': True, 'message': f'{request_type} - No action needed'})
+                }
+        else:
+            # Manual invocation mode
+            print("Manual invocation detected - initializing database...")
+            
             # Get database connection info from environment
             secret_arn = os.environ['DB_SECRET_ARN']
             db_host = os.environ['DB_HOST']
@@ -165,18 +208,65 @@ def lambda_handler(event, context):
             # Initialize database
             success, message = initialize_database(db_host, db_name, db_user, db_password)
             
-            send_response(event, context, 'SUCCESS', {
-                'Message': message,
-                'Tables': 'resources, resource_relationships, discovery_runs'
-            })
-        else:
-            # For Update/Delete, just return success
-            send_response(event, context, 'SUCCESS', {
-                'Message': f'{request_type} - No action needed'
-            })
+            return {
+                'statusCode': 200 if success else 500,
+                'body': json.dumps({
+                    'success': success,
+                    'message': message,
+                    'tables': ['resources', 'monitored_accounts']
+                })
+            }
             
+    except KeyError as e:
+        # Missing CloudFormation fields - treat as manual invocation
+        print(f"KeyError ({e}) - treating as manual invocation")
+        
+        try:
+            # Get database connection info from environment
+            secret_arn = os.environ['DB_SECRET_ARN']
+            db_host = os.environ['DB_HOST']
+            db_name = os.environ['DB_NAME']
+            region = os.environ['AWS_REGION']
+            
+            # Get credentials from Secrets Manager
+            secret = get_secret(secret_arn, region)
+            db_user = secret['username']
+            db_password = secret['password']
+            
+            # Initialize database
+            success, message = initialize_database(db_host, db_name, db_user, db_password)
+            
+            return {
+                'statusCode': 200 if success else 500,
+                'body': json.dumps({
+                    'success': success,
+                    'message': message,
+                    'tables': ['resources', 'monitored_accounts']
+                })
+            }
+        except Exception as inner_e:
+            print(f"Error in manual invocation: {inner_e}")
+            return {
+                'statusCode': 500,
+                'body': json.dumps({
+                    'success': False,
+                    'error': str(inner_e)
+                })
+            }
+    
     except Exception as e:
         print(f"Error: {e}")
-        send_response(event, context, 'FAILED', {
-            'Message': str(e)
-        })
+        
+        # Try to send CloudFormation response if this was a CFN event
+        if 'RequestType' in event and 'StackId' in event:
+            send_response(event, context, 'FAILED', {
+                'Message': str(e)
+            })
+        
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'success': False,
+                'error': str(e)
+            })
+        }

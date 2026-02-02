@@ -36,7 +36,7 @@ $functionName = "cloudauditor-query-$Environment"
 # Build event payload
 $event = @{
     report_type = $ReportType
-    limit = $Limit
+    limit       = $Limit
 }
 
 if ($Query) {
@@ -49,14 +49,21 @@ $eventJson = $event | ConvertTo-Json -Compress
 Write-Host "Invoking Lambda: $functionName" -ForegroundColor Cyan
 Write-Host "Report Type: $ReportType" -ForegroundColor Gray
 
+# Save payload to temp file for proper JSON handling
+$payloadFile = "payload-temp.json"
+$eventJson | Out-File -FilePath $payloadFile -Encoding ascii -NoNewline
+
 # Invoke Lambda
 $outputFile = "query-result-$(Get-Date -Format 'HHmmss').json"
 aws lambda invoke `
     --function-name $functionName `
     --profile $Profile `
     --region $Region `
-    --payload $eventJson `
+    --payload file://$payloadFile `
     $outputFile | Out-Null
+
+# Clean up temp file
+Remove-Item $payloadFile -ErrorAction SilentlyContinue
 
 if ($LASTEXITCODE -eq 0) {
     $result = Get-Content $outputFile | ConvertFrom-Json
@@ -68,10 +75,12 @@ if ($LASTEXITCODE -eq 0) {
         $body.results | ConvertTo-Json -Depth 10 | Write-Host
         
         Write-Host "`nFull response saved to: $outputFile" -ForegroundColor Gray
-    } else {
+    }
+    else {
         Write-Host "`nError: $($result.body)" -ForegroundColor Red
         $result | ConvertTo-Json -Depth 5 | Write-Host
     }
-} else {
+}
+else {
     Write-Host "Failed to invoke Lambda" -ForegroundColor Red
 }
