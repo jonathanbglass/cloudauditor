@@ -21,6 +21,28 @@ Our revolutionary discovery process provides **100% visibility** using an intell
 - **One-Click Deployment**: Fully automated via GitHub Actions and AWS SAM.
 - **Zero Manual DB Ops**: The schema auto-initializes the moment the stack is ready.
 
+### 📊 Advanced Reporting & Analytics
+- **Excel Report Generation**: Lambda-based report generator with S3 delivery
+  - Executive Summary with discovery metrics
+  - All Resources with full details and timestamps
+  - Resource breakdowns by Type, Account, and Region
+- **Timestamp Tracking**: Track when resources are first discovered
+  - `inserted_at` column for historical analysis
+  - Date-based filtering for "latest only" reports
+  - Support for multiple discovery runs per day
+- **Multi-Account Support**: Automatic discovery across AWS Organizations
+  - Hub-and-spoke IAM pattern with cross-account roles
+  - StackSet deployment for spoke accounts
+  - Centralized reporting across all accounts
+
+### 🔧 Data Quality & Consistency
+- **Global Resource Normalization**: Consistent handling of global AWS resources
+  - Empty regions automatically normalized to 'global'
+  - DatabaseClient safety net prevents duplicate entries
+  - Clean data for IAM, S3, CloudFront, Route53, etc.
+- **Deduplication**: Automatic cleanup of duplicate resources
+- **Data Integrity**: Robust error handling and validation
+
 ## Quick Start
 
 ### 🚀 5-Minute Deployment
@@ -98,9 +120,11 @@ cloudauditor/
 ## Deployed Infrastructure
 
 ### Compute & Events
-- ✅ **2 Core Lambda Functions**
+- ✅ **4 Core Lambda Functions**
   - `cloudauditor-discovery-dev` - Universal Resource Discovery Engine
   - `cloudauditor-db-init-dev` - Automated Database Initialization
+  - `cloudauditor-query-dev` - Database Query Interface
+  - `cloudauditor-report-generator-dev` - Excel Report Generation with S3 Delivery
 - ✅ **EventBridge Rules** for scheduled daily execution
 
 ### Database
@@ -137,12 +161,14 @@ CREATE TABLE resources (
     tags JSONB,
     properties JSONB NOT NULL,
     discovered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    inserted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Query examples
 SELECT resource_type, COUNT(*) FROM resources GROUP BY resource_type;
 SELECT * FROM resources WHERE tags @> '{"Environment": "production"}';
+SELECT * FROM resources WHERE DATE(inserted_at) = CURRENT_DATE; -- Today's discoveries
 ```
 
 See [database/README.md](database/README.md) for complete schema and query examples.
@@ -210,6 +236,24 @@ sam deploy --guided
 - Environment variables for configuration
 
 ## Version History
+
+### 2026-02-02 - Advanced Reporting & Data Quality
+- ✅ **Timestamp Tracking**: Added `inserted_at` column for historical asset tracking
+  - Date-based filtering for "latest only" reports
+  - Support for multiple discovery runs per day
+  - Excel reports now include discovery timestamps
+- ✅ **Excel Report Generation**: Lambda-based report generator with S3 delivery
+  - Executive Summary with discovery metrics and data freshness
+  - All Resources sheet with full details and timestamps
+  - Resource breakdowns by Type, Account, and Region
+- ✅ **Global Resource Normalization**: Fixed duplicate global resources
+  - DatabaseClient safety net normalizes empty regions to 'global'
+  - Cleaned up 30 duplicate entries from database
+  - Consistent handling of IAM, S3, CloudFront, Route53
+- ✅ **Multi-Account Support**: Cross-account discovery via Organizations
+  - Hub-and-spoke IAM pattern with StackSet deployment
+  - Automatic account discovery and onboarding
+  - Centralized reporting across all accounts
 
 ### 2026-02-01 - Stability & OS Optimization
 - ✅ **Python 3.13 Downgrade**: Resolved deployment timeouts by shifting to a fully supported Lambda runtime.
