@@ -2,6 +2,21 @@
 
 This guide describes how to configure CloudAuditor to scan multiple AWS accounts within an Organization.
 
+## 🎯 Deployment Modes
+
+### Organization Management Account (Recommended)
+When CloudAuditor is deployed in an **Organization Management account**, it automatically:
+- Detects all active member accounts
+- Auto-registers them in the database
+- Scans them on every discovery run
+
+**No manual registration required!** Simply deploy the Spoke Role via StackSets and CloudAuditor handles the rest.
+
+### Standalone/Hub Account
+For non-Organization deployments, use `register_account.py` to manually register accounts.
+
+---
+
 ## 1. Deploy the Spoke Role
 The `CloudAuditorExecutionRole` must be deployed to every member account you wish to scan.
 

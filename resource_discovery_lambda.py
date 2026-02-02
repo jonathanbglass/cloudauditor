@@ -10,6 +10,7 @@ from typing import Dict, Any
 import boto3
 from resource_discovery import ResourceDiscoveryEngine, DiscoveryConfig
 from lib.database import DatabaseClient
+from lib.organizations import OrganizationsClient
 
 # Configure logging
 logger = logging.getLogger()
@@ -31,10 +32,38 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info(f"Event: {json.dumps(event)}")
     
     try:
-        # Initialize Database Client
+        # Initialize clients
         db = DatabaseClient()
+        org_client = OrganizationsClient()
         
-        # 1. Fetch monitored accounts from DB
+        # 1. Check if this is an Organization Management account
+        if org_client.is_organization_management_account():
+            logger.info("Running in Organization Management account - auto-discovering member accounts...")
+            
+            # Get all Organization accounts
+            org_accounts = org_client.list_organization_accounts()
+            
+            # Get existing monitored accounts
+            existing_accounts = {a['account_id'] for a in db.get_monitored_accounts()}
+            
+            # Auto-register any new accounts
+            new_accounts = 0
+            for account in org_accounts:
+                if account['account_id'] not in existing_accounts:
+                    role_arn = f"arn:aws:iam::{account['account_id']}:role/CloudAuditorExecutionRole"
+                    db.register_account(
+                        account['account_id'],
+                        role_arn,
+                        account['account_name'],
+                        auto_discovered=True
+                    )
+                    new_accounts += 1
+                    logger.info(f"Auto-registered account: {account['account_id']} ({account['account_name']})")
+            
+            if new_accounts > 0:
+                logger.info(f"Auto-registered {new_accounts} new Organization member accounts.")
+        
+        # 2. Fetch all monitored accounts from DB
         accounts_to_scan = db.get_monitored_accounts()
         account_ids = [a['account_id'] for a in accounts_to_scan]
         

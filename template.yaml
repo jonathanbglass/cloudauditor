@@ -432,6 +432,15 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: '*'
+              
+              # AWS Organizations (for auto-discovery)
+              - Effect: Allow
+                Action:
+                  - organizations:DescribeOrganization
+                  - organizations:ListAccounts
+                  - cloudformation:DescribeStackSet
+                  - cloudformation:ListStackSets
+                Resource: '*'
 
   # Resource Discovery Lambda Function
   ResourceDiscoveryFunction:

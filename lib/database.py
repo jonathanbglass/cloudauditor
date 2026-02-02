@@ -61,16 +61,16 @@ class DatabaseClient:
             rows = cur.fetchall()
             return [{'account_id': r[0], 'role_arn': r[1], 'status': r[2]} for r in rows]
 
-    def register_account(self, account_id: str, role_arn: str, account_name: Optional[str] = None):
+    def register_account(self, account_id: str, role_arn: str, account_name: Optional[str] = None, auto_discovered: bool = False):
         """Insert or update a monitored account."""
         conn = self._get_connection()
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO monitored_accounts (account_id, account_name, role_arn, status)
-                VALUES (%s, %s, %s, 'pending')
+                INSERT INTO monitored_accounts (account_id, account_name, role_arn, status, auto_discovered)
+                VALUES (%s, %s, %s, 'pending', %s)
                 ON CONFLICT (account_id) DO UPDATE 
-                SET role_arn = EXCLUDED.role_arn, status = 'pending'
-            """, (account_id, account_name, role_arn))
+                SET role_arn = EXCLUDED.role_arn, status = 'pending', auto_discovered = EXCLUDED.auto_discovered
+            """, (account_id, account_name, role_arn, auto_discovered))
 
     def update_account_status(self, account_id: str, status: str, last_error: Optional[str] = None):
         """Update account status and last verification time."""

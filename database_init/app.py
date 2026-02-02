@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS public.monitored_accounts (
     status TEXT NOT NULL DEFAULT 'pending',
     added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_verification_at TIMESTAMP WITH TIME ZONE,
-    last_error_message TEXT
+    last_error_message TEXT,
+    auto_discovered BOOLEAN DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_monitored_accounts_status ON public.monitored_accounts(status);
