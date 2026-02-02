@@ -107,6 +107,11 @@ Technical design for the resource discovery system:
 - **[DATABASE_QUERIES.md](DATABASE_QUERIES.md)** - Querying the database via Lambda
 - **[DATABASE_INIT.md](DATABASE_INIT.md)** - Database initialization and schema management
 
+### Multi-Account Setup
+
+- **[STACKSET_DEPLOYMENT.md](STACKSET_DEPLOYMENT.md)** - Deploying spoke roles to Organization accounts
+- **[MULTI_ACCOUNT_SETUP.md](MULTI_ACCOUNT_SETUP.md)** - Cross-account configuration guide
+
 ### POC Walkthrough
 Hands-on guide to the working proof of concept:
 - Component descriptions with code examples
