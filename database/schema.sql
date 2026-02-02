@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.resources (
     properties JSONB NOT NULL,
     discovered_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_seen_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    inserted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     UNIQUE(resource_id, resource_type, region, account_id)
 );
 
@@ -23,6 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_resources_type ON public.resources(resource_type)
 CREATE INDEX IF NOT EXISTS idx_resources_region ON public.resources(region);
 CREATE INDEX IF NOT EXISTS idx_resources_account ON public.resources(account_id);
 CREATE INDEX IF NOT EXISTS idx_resources_discovered ON public.resources(discovered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_resources_inserted ON public.resources(inserted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_resources_arn ON public.resources(resource_arn);
 CREATE INDEX IF NOT EXISTS idx_resources_tags ON public.resources USING GIN (tags);
 
@@ -63,3 +65,4 @@ COMMENT ON TABLE public.discovery_runs IS 'Tracks resource discovery execution h
 COMMENT ON COLUMN public.resources.properties IS 'Full JSON representation of the resource from AWS API';
 COMMENT ON COLUMN public.resources.tags IS 'Resource tags as JSON key-value pairs';
 COMMENT ON COLUMN public.resources.last_seen_at IS 'Last time this resource was seen during discovery (for detecting deleted resources)';
+COMMENT ON COLUMN public.resources.inserted_at IS 'Timestamp when this resource was first inserted into the database (never updated on subsequent discoveries)';

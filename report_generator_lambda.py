@@ -23,8 +23,16 @@ def get_secret(secret_arn, region):
     response = client.get_secret_value(SecretId=secret_arn)
     return json.loads(response['SecretString'])
 
-def fetch_resources_from_database(db_host, db_name, db_user, db_password):
-    """Fetch all resources from the database"""
+def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest_only=True):
+    """Fetch resources from the database
+    
+    Args:
+        db_host: Database host
+        db_name: Database name
+        db_user: Database user
+        db_password: Database password
+        latest_only: If True, only fetch resources from the latest discovery run
+    """
     logger.info(f"Connecting to database: {db_host}")
     
     conn = psycopg.connect(
@@ -35,21 +43,47 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password):
         password=db_password
     )
     
-    query = """
-        SELECT 
-            resource_id,
-            resource_type,
-            resource_arn,
-            region,
-            account_id,
-            name,
-            tags,
-            properties,
-            discovered_at,
-            last_seen_at
-        FROM resources
-        ORDER BY account_id, region, resource_type, resource_id
-    """
+    if latest_only:
+        # Get resources from the latest discovery run only
+        query = """
+            WITH latest_run AS (
+                SELECT MAX(inserted_at) as max_timestamp
+                FROM resources
+            )
+            SELECT 
+                r.resource_id,
+                r.resource_type,
+                r.resource_arn,
+                r.region,
+                r.account_id,
+                r.name,
+                r.tags,
+                r.properties,
+                r.discovered_at,
+                r.last_seen_at,
+                r.inserted_at
+            FROM resources r, latest_run
+            WHERE r.inserted_at = latest_run.max_timestamp
+            ORDER BY r.account_id, r.region, r.resource_type, r.resource_id
+        """
+    else:
+        # Get all resources
+        query = """
+            SELECT 
+                resource_id,
+                resource_type,
+                resource_arn,
+                region,
+                account_id,
+                name,
+                tags,
+                properties,
+                discovered_at,
+                last_seen_at,
+                inserted_at
+            FROM resources
+            ORDER BY account_id, region, resource_type, resource_id
+        """
     
     resources = []
     with conn.cursor() as cur:
@@ -68,11 +102,12 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password):
                 'resource_id': row[0],
                 'discovered_at': row[8].isoformat() if row[8] else None,
                 'last_seen_at': row[9].isoformat() if row[9] else None,
+                'inserted_at': row[10].isoformat() if row[10] else None,
             }
             resources.append(resource_dict)
     
     conn.close()
-    logger.info(f"Fetched {len(resources)} resources from database")
+    logger.info(f"Fetched {len(resources)} resources from database (latest_only={latest_only})")
     return resources
 
 def generate_excel_report(resources):
@@ -95,12 +130,18 @@ def generate_excel_report(resources):
     
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # 1. Executive Summary
+        # Get discovery timestamp from first resource
+        discovery_timestamp = 'N/A'
+        if 'inserted_at' in df.columns and not df['inserted_at'].isna().all():
+            discovery_timestamp = df['inserted_at'].iloc[0] if len(df) > 0 else 'N/A'
+        
         summary_data = {
             'Metric': [
                 'Total Resources',
                 'Unique Resource Types',
                 'Accounts',
                 'Regions',
+                'Discovery Run',
                 'Report Generated'
             ],
             'Value': [
@@ -108,6 +149,7 @@ def generate_excel_report(resources):
                 df['resource_type'].nunique(),
                 df['account_id'].nunique(),
                 df['region'].nunique(),
+                discovery_timestamp,
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
             ]
         }

@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.resources (
     properties JSONB NOT NULL,
     discovered_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     last_seen_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    inserted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     UNIQUE(resource_id, resource_type, region, account_id)
 );
 
@@ -61,6 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_resources_type ON public.resources(resource_type)
 CREATE INDEX IF NOT EXISTS idx_resources_region ON public.resources(region);
 CREATE INDEX IF NOT EXISTS idx_resources_account ON public.resources(account_id);
 CREATE INDEX IF NOT EXISTS idx_resources_discovered ON public.resources(discovered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_resources_inserted ON public.resources(inserted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_resources_arn ON public.resources(resource_arn);
 CREATE INDEX IF NOT EXISTS idx_resources_tags ON public.resources USING GIN (tags);
 
@@ -117,8 +119,25 @@ CREATE INDEX IF NOT EXISTS idx_monitored_accounts_status ON public.monitored_acc
             autocommit=True
         )
         
+        
         # Execute schema
         cursor = conn.cursor()
+        
+        # Migration: Add inserted_at column FIRST if it doesn't exist
+        # This must run before the main schema to avoid errors
+        try:
+            cursor.execute("""
+                ALTER TABLE public.resources 
+                ADD COLUMN IF NOT EXISTS inserted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_resources_inserted ON public.resources(inserted_at DESC)
+            """)
+            print("Migration: Added inserted_at column and index")
+        except Exception as e:
+            print(f"Migration note (table may not exist yet): {e}")
+        
+        # Now execute the full schema (CREATE TABLE IF NOT EXISTS will skip if exists)
         cursor.execute(schema_sql)
         
         # Verify tables were created
@@ -133,8 +152,8 @@ CREATE INDEX IF NOT EXISTS idx_monitored_accounts_status ON public.monitored_acc
         cursor.close()
         conn.close()
         
-        print(f"Schema initialized successfully. Created tables: {tables}")
-        return True, f"Created {len(tables)} tables"
+        print(f"Schema initialized successfully. Tables: {tables}")
+        return True, f"Initialized {len(tables)} tables"
         
     except Exception as e:
         print(f"Error initializing database: {e}")
