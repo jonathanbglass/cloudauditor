@@ -188,7 +188,8 @@ class CloudControlClient:
         if arn:
             arn_parts = arn.split(':')
             if len(arn_parts) > 4:
-                region = arn_parts[3] or self.region
+                # Global resources have empty region field
+                region = arn_parts[3] if arn_parts[3] else 'global'
                 account_id = arn_parts[4]
         
         # Get resource name

@@ -208,8 +208,9 @@ class ResourceExplorerClient:
         
         # Parse ARN to extract account and region
         # ARN format: arn:aws:service:region:account-id:resource-type/resource-id
+        # Global resources (IAM, S3, CloudFront, etc.) have empty region field
         arn_parts = arn.split(':')
-        region = arn_parts[3] if len(arn_parts) > 3 else 'unknown'
+        region = arn_parts[3] if len(arn_parts) > 3 and arn_parts[3] else 'global'
         account_id = arn_parts[4] if len(arn_parts) > 4 else 'unknown'
         
         # Extract properties
