@@ -33,6 +33,8 @@ if ($body.success) {
     Write-Host "  Resources: $($body.resource_count)" -ForegroundColor White
     Write-Host "  S3 Bucket: $($body.s3_bucket)" -ForegroundColor White
     Write-Host "  S3 Key: $($body.s3_key)" -ForegroundColor White
+    Write-Host "`n  Download URL (expires in $($body.expires_in_seconds) seconds):" -ForegroundColor Yellow
+    Write-Host "  $($body.download_url)" -ForegroundColor Gray
     
     # Download the report
     Write-Host "`nDownloading Excel file..." -ForegroundColor Cyan
