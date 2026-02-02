@@ -87,6 +87,9 @@ class DatabaseClient:
         conn = self._get_connection()
         with conn.cursor() as cur:
             for r in resources:
+                # Normalize empty region to 'global' for global resources
+                region = r.get('region', '') or 'global'
+                
                 cur.execute("""
                     INSERT INTO resources (
                         resource_id, resource_type, resource_arn, region, account_id, name, tags, properties
@@ -99,6 +102,6 @@ class DatabaseClient:
                         last_seen_at = NOW()
                 """, (
                     r.get('id') or r.get('arn'), r['resource_type'], r.get('arn'), 
-                    r['region'], r['account_id'], r.get('name'), 
+                    region, r['account_id'], r.get('name'), 
                     json.dumps(r.get('tags', {})), json.dumps(r.get('properties', {}))
                 ))
