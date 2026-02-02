@@ -37,42 +37,59 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         org_client = OrganizationsClient()
         
         # 1. Check if this is an Organization Management account
-        if org_client.is_organization_management_account():
-            logger.info("Running in Organization Management account - auto-discovering member accounts...")
-            
-            # Get all Organization accounts
-            org_accounts = org_client.list_organization_accounts()
-            
-            # Get existing monitored accounts
-            existing_accounts = {a['account_id'] for a in db.get_monitored_accounts()}
-            
-            # Auto-register any new accounts
-            new_accounts = 0
-            for account in org_accounts:
-                if account['account_id'] not in existing_accounts:
-                    role_arn = f"arn:aws:iam::{account['account_id']}:role/CloudAuditorExecutionRole"
-                    db.register_account(
-                        account['account_id'],
-                        role_arn,
-                        account['account_name'],
-                        auto_discovered=True
-                    )
-                    new_accounts += 1
-                    logger.info(f"Auto-registered account: {account['account_id']} ({account['account_name']})")
-            
-            if new_accounts > 0:
-                logger.info(f"Auto-registered {new_accounts} new Organization member accounts.")
+        try:
+            if org_client.is_organization_management_account():
+                logger.info("Running in Organization Management account - auto-discovering member accounts...")
+                
+                # Get all Organization accounts
+                org_accounts = org_client.list_organization_accounts()
+                logger.info(f"Found {len(org_accounts)} Organization accounts")
+                
+                # Get existing monitored accounts
+                existing_accounts = {a['account_id'] for a in db.get_monitored_accounts()}
+                logger.info(f"Currently monitoring {len(existing_accounts)} accounts")
+                
+                # Auto-register any new accounts
+                new_accounts = 0
+                for account in org_accounts:
+                    if account['account_id'] not in existing_accounts:
+                        try:
+                            role_arn = f"arn:aws:iam::{account['account_id']}:role/CloudAuditorExecutionRole"
+                            db.register_account(
+                                account['account_id'],
+                                role_arn,
+                                account['account_name'],
+                                auto_discovered=True
+                            )
+                            new_accounts += 1
+                            logger.info(f"Auto-registered account: {account['account_id']} ({account['account_name']})")
+                        except Exception as reg_error:
+                            logger.error(f"Failed to register account {account['account_id']}: {str(reg_error)}")
+                
+                if new_accounts > 0:
+                    logger.info(f"Auto-registered {new_accounts} new Organization member accounts.")
+                else:
+                    logger.info("No new Organization accounts to register.")
+        except Exception as org_error:
+            logger.error(f"Organizations auto-discovery failed: {str(org_error)}")
+            logger.info("Continuing with existing monitored accounts...")
         
         # 2. Fetch all monitored accounts from DB
-        accounts_to_scan = db.get_monitored_accounts()
-        account_ids = [a['account_id'] for a in accounts_to_scan]
+        try:
+            accounts_to_scan = db.get_monitored_accounts()
+            account_ids = [a['account_id'] for a in accounts_to_scan]
+            logger.info(f"Retrieved {len(account_ids)} monitored accounts from database")
+        except Exception as db_error:
+            logger.error(f"Failed to fetch monitored accounts from database: {str(db_error)}")
+            account_ids = []
         
         if not account_ids:
             logger.info("No monitored accounts found. Checking local account...")
             sts = boto3.client('sts')
             account_ids = [sts.get_caller_identity()['Account']]
+            logger.info(f"Using local account: {account_ids[0]}")
 
-        # 2. Configure discovery
+        # 3. Configure discovery
         config = DiscoveryConfig(
             accounts=account_ids,
             use_resource_explorer=True,
