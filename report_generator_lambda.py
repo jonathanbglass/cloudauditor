@@ -159,7 +159,7 @@ def generate_excel_report(resources):
         
         # 2. All Resources
         # Select key columns for the main view
-        main_cols = ['account_id', 'region', 'resource_type', 'name', 'arn', 'resource_id']
+        main_cols = ['account_id', 'region', 'resource_type', 'name', 'arn', 'resource_id', 'inserted_at']
         available_cols = [col for col in main_cols if col in df.columns]
         df[available_cols].to_excel(writer, sheet_name='All Resources', index=False)
         
