@@ -1,0 +1,1 @@
+# CloudAuditor shared library
