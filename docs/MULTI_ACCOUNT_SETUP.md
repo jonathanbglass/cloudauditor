@@ -52,6 +52,22 @@ CloudAuditor uses a "Hub and Spoke" model:
 
 The Hub Lambda performs `sts:AssumeRole` to obtain temporary credentials for each Spoke, then executes discovery as if it were local to that account.
 
-## 3. Troubleshooting
-- **AccessDenied on AssumeRole**: Ensure the `HubAccountId` in the spoke role is correct.
-- **ResourceExplorer Errors**: Verify that Resource Explorer 2 is enabled in the spoke account and an index exists.
+## 4. Registering New Accounts
+Once the Spoke Role is deployed, you must register the account in the CloudAuditor database to enable monitoring.
+
+### Using the CLI
+Run the `register_account.py` script from the Hub account environment:
+```powershell
+python register_account.py <ACCOUNT_ID> --name "Production-West"
+```
+
+### What happens during registration:
+1. **IAM Pre-flight Check**: The script immediately attempts to assume the role in the target account.
+2. **Immediate Feedback**: If the check fails, you'll receive specific troubleshooting tips (e.g., checking the Hub ID or role name).
+3. **Automatic Discovery**: If the check passes, the account is added to the database and an **initial inventory scan** is triggered immediately.
+
+## 5. Troubleshooting Account Access
+If registration fails with `AccessDenied`:
+1. **Check Hub ID**: Ensure the `AssumeRolePolicy` in the member account role includes your Hub Account ID.
+2. **Role Name**: The default role name is `CloudAuditorExecutionRole`. If you customized it, update the verifier and engine configuration.
+3. **Hub Permissions**: Re-verify that the Hub Lambda role has `sts:AssumeRole` on the member account ARN.

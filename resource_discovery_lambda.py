@@ -7,7 +7,9 @@ import logging
 import os
 from typing import Dict, Any
 
+import boto3
 from resource_discovery import ResourceDiscoveryEngine, DiscoveryConfig
+from lib.database import DatabaseClient
 
 # Configure logging
 logger = logging.getLogger()
@@ -29,32 +31,60 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info(f"Event: {json.dumps(event)}")
     
     try:
-        # Configure discovery
+        # Initialize Database Client
+        db = DatabaseClient()
+        
+        # 1. Fetch monitored accounts from DB
+        accounts_to_scan = db.get_monitored_accounts()
+        account_ids = [a['account_id'] for a in accounts_to_scan]
+        
+        if not account_ids:
+            logger.info("No monitored accounts found. Checking local account...")
+            sts = boto3.client('sts')
+            account_ids = [sts.get_caller_identity()['Account']]
+
+        # 2. Configure discovery
         config = DiscoveryConfig(
+            accounts=account_ids,
             use_resource_explorer=True,
             use_config=True,
-            use_cloud_control=False,  # Disabled by default for performance
+            use_cloud_control=False,
             max_workers=10
         )
         
-        # Run discovery
+        # 3. Run discovery
         engine = ResourceDiscoveryEngine(config=config)
         result = engine.discover_all_resources()
         
+        # 4. Save results to Database
+        resources_to_save = []
+        for r in result.resources:
+            r_dict = r.to_dict()
+            # Map source value for DB
+            r_dict['properties'] = r_dict.get('configuration', {})
+            resources_to_save.append(r_dict)
+            
+        if resources_to_save:
+            logger.info(f"Saving {len(resources_to_save)} resources to database...")
+            db.save_resources(resources_to_save)
+            
+        # 5. Update account status based on scan
+        # (Simplified: if we got here, mark active accounts as active)
+        for account_id in account_ids:
+            db.update_account_status(account_id, 'active')
+
         # Log summary
         logger.info(f"Discovery complete: {result.total_count} resources in {result.duration_seconds:.2f}s")
         
         if result.errors:
             logger.warning(f"Errors encountered: {result.errors}")
+            # Update specific account if it failed (heuristic: check error string)
+            for err in result.errors:
+                for account_id in account_ids:
+                    if account_id in err:
+                        db.update_account_status(account_id, 'error', last_error=err)
         
-        # Get summary by type
         summary = engine.get_resource_summary(result)
-        logger.info(f"Resource types discovered: {len(summary)}")
-        
-        # TODO: Store results in database
-        # For now, just log the summary
-        for resource_type, count in list(summary.items())[:10]:  # Top 10
-            logger.info(f"  {resource_type}: {count}")
         
         return {
             'statusCode': 200,

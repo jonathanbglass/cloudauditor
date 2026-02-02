@@ -444,6 +444,17 @@ Resources:
       Role: !GetAtt CloudAuditorLambdaRole.Arn
       Timeout: 300  # 5 minutes for discovery
       MemorySize: 1024
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
       Events:
         ScheduledEvent:
           Type: Schedule

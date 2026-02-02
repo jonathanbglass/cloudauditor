@@ -90,6 +90,18 @@ CREATE TABLE IF NOT EXISTS public.discovery_runs (
 
 CREATE INDEX IF NOT EXISTS idx_discovery_runs_started ON public.discovery_runs(started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_discovery_runs_status ON public.discovery_runs(status);
+
+CREATE TABLE IF NOT EXISTS public.monitored_accounts (
+    account_id TEXT PRIMARY KEY,
+    account_name TEXT,
+    role_arn TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    last_verification_at TIMESTAMP WITH TIME ZONE,
+    last_error_message TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_monitored_accounts_status ON public.monitored_accounts(status);
 """
     
     try:
