@@ -145,7 +145,11 @@ def generate_excel_report(resources):
 
 def upload_to_s3(file_content, bucket_name, file_key):
     """Upload file to S3"""
-    s3 = boto3.client('s3')
+    from botocore.config import Config
+    
+    # Configure S3 client with signature version 4
+    s3_config = Config(signature_version='s3v4')
+    s3 = boto3.client('s3', config=s3_config)
     
     s3.put_object(
         Bucket=bucket_name,
@@ -154,11 +158,11 @@ def upload_to_s3(file_content, bucket_name, file_key):
         ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     
-    # Generate presigned URL (valid for 1 hour)
+    # Generate presigned URL (valid for 15 minutes to avoid clock skew issues)
     url = s3.generate_presigned_url(
         'get_object',
         Params={'Bucket': bucket_name, 'Key': file_key},
-        ExpiresIn=3600
+        ExpiresIn=900  # 15 minutes
     )
     
     return url
@@ -224,7 +228,7 @@ def lambda_handler(event, context):
                 'download_url': download_url,
                 's3_bucket': bucket_name,
                 's3_key': file_key,
-                'expires_in_seconds': 3600
+                'expires_in_seconds': 900  # 15 minutes
             })
         }
         
