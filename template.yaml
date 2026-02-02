@@ -348,6 +348,27 @@ Resources:
         - Key: Name
           Value: !Sub cloudauditor-db-secret-${Environment}
 
+  # S3 Bucket for storing generated reports
+  ReportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub cloudauditor-reports-${AWS::AccountId}-${Environment}
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldReports
+            Status: Enabled
+            ExpirationInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-reports-${Environment}
+
   # ==================== IAM ROLES ====================
   
   # IAM Role for Lambda functions
@@ -427,6 +448,17 @@ Resources:
                   - rds-db:connect
                 Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${AuroraCluster}/${DatabaseMasterUsername}'
               
+              # S3 access for report generation
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ReportBucket.Arn
+                  - !Sub '${ReportBucket.Arn}/*'
+              
               # SNS publishing (for future use)
               - Effect: Allow
                 Action:
@@ -494,6 +526,30 @@ Resources:
           DB_SECRET_ARN: !Ref DatabaseSecret
           DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
           DB_NAME: !Ref DatabaseName
+
+  # Report Generator Lambda Function (generates Excel reports from database)
+  ReportGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-report-generator-${Environment}
+      CodeUri: .
+      Handler: report_generator_lambda.lambda_handler
+      Description: CloudAuditor Report Generator (generates Excel from Aurora)
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 300
+      MemorySize: 1024
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
+          REPORT_BUCKET: !Ref ReportBucket
 
   # Database Initialization Lambda Function
   DatabaseInitFunction:

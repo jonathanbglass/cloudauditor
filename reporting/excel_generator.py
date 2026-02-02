@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 
 import pandas as pd
-from .models import Resource, DiscoveryResult
+from resource_discovery.models import Resource, DiscoveryResult
 
 logger = logging.getLogger(__name__)
 
