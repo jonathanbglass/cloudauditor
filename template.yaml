@@ -472,6 +472,29 @@ Resources:
             Description: Daily resource discovery
             Enabled: true
 
+  # Database Query Lambda Function (for remote queries)
+  DatabaseQueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-query-${Environment}
+      CodeUri: .
+      Handler: database_query_lambda.lambda_handler
+      Description: CloudAuditor Database Query (invoke remotely)
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 60
+      MemorySize: 512
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
+
   # Database Initialization Lambda Function
   DatabaseInitFunction:
     Type: AWS::Serverless::Function
@@ -520,6 +543,12 @@ Outputs:
     Value: !GetAtt ResourceDiscoveryFunction.Arn
     Export:
       Name: !Sub ${AWS::StackName}-ResourceDiscoveryFunctionArn
+
+  DatabaseQueryFunctionArn:
+    Description: Database Query Lambda Function ARN
+    Value: !GetAtt DatabaseQueryFunction.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-DatabaseQueryFunctionArn
 
   LambdaRoleArn:
     Description: Lambda Execution Role ARN
