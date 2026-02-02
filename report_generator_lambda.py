@@ -44,10 +44,11 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest
     )
     
     if latest_only:
-        # Get resources from the latest discovery run only
+        # Get resources from the latest discovery run(s) - all resources inserted today
+        # This captures all resources from today's discovery runs, even if there are multiple runs
         query = """
-            WITH latest_run AS (
-                SELECT MAX(inserted_at) as max_timestamp
+            WITH latest_date AS (
+                SELECT DATE(MAX(inserted_at)) as max_date
                 FROM resources
             )
             SELECT 
@@ -62,8 +63,8 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest
                 r.discovered_at,
                 r.last_seen_at,
                 r.inserted_at
-            FROM resources r, latest_run
-            WHERE r.inserted_at = latest_run.max_timestamp
+            FROM resources r, latest_date
+            WHERE DATE(r.inserted_at) = latest_date.max_date
             ORDER BY r.account_id, r.region, r.resource_type, r.resource_id
         """
     else:
