@@ -31,7 +31,7 @@ env/
 pyvenv.cfg
 bin/
 include/
-lib/
+# lib/  # Commented out to allow lib/ source code directory
 pip-selfcheck.json
 
 # IDE

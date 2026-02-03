@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.13'
           cache: 'pip'
 
       - name: Install dependencies
@@ -47,9 +47,9 @@ jobs:
       - name: Lint with flake8
         run: |
           # Stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=bin,lib,venv,.aws-sam,node_modules
           # Exit-zero treats all errors as warnings
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=bin,lib,venv,.aws-sam,node_modules
 
       - name: Type check with mypy
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: '3.13'
 
       - name: Set up AWS SAM CLI
         uses: aws-actions/setup-sam@v2
@@ -97,8 +97,9 @@ jobs:
         run: |
           sam package \
             --output-template-file packaged.yaml \
-            --s3-bucket cloudauditor-deployments-${{ matrix.environment }} \
-            --s3-prefix ${{ github.sha }}
+            --s3-bucket cloudauditor-artifacts-2026 \
+            --s3-prefix ${{ github.sha }} \
+            --region ${{ env.AWS_REGION }}
 
       - name: Upload packaged template
         uses: actions/upload-artifact@v4
@@ -140,15 +141,7 @@ jobs:
 
       - name: SAM Deploy
         run: |
-          sam deploy \
-            --template-file packaged.yaml \
-            --stack-name cloudauditor-${{ matrix.environment }} \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides \
-              Environment=${{ matrix.environment }} \
-              DatabaseMasterPassword=${{ secrets.DB_PASSWORD }} \
-            --no-fail-on-empty-changeset \
-            --no-confirm-changeset
+          sam deploy --template-file packaged.yaml --stack-name cloudauditor-${{ matrix.environment }} --capabilities CAPABILITY_NAMED_IAM --parameter-overrides "Environment=${{ matrix.environment }}" "DatabaseMasterPassword=${{ secrets.DB_PASSWORD }}" --no-fail-on-empty-changeset --no-confirm-changeset
 
       - name: Get Stack Outputs
         id: stack-outputs
@@ -197,15 +190,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Test Manager Lambda
-        run: |
-          aws lambda invoke \
-            --function-name cloudauditor-manager-${{ matrix.environment }} \
-            --payload '{"test": true}' \
-            --cli-binary-format raw-in-base64-out \
-            response.json
-          cat response.json
-
       - name: Test Resource Discovery Lambda
         run: |
           aws lambda invoke \
@@ -217,8 +201,5 @@ jobs:
 
       - name: Check CloudWatch Logs
         run: |
-          echo "Recent logs from Manager function:"
-          aws logs tail /aws/lambda/cloudauditor-manager-${{ matrix.environment }} --since 5m --format short || true
-          
           echo "Recent logs from Discovery function:"
           aws logs tail /aws/lambda/cloudauditor-discovery-${{ matrix.environment }} --since 5m --format short || true

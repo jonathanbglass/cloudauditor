@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudAuditor - Cross-Account Execution Role for Member Accounts
+
+Parameters:
+  HubAccountId:
+    Type: String
+    Description: The AWS Account ID where CloudAuditor Lambdas are deployed.
+    AllowedPattern: '^\d{12}$'
+    ConstraintDescription: Must be a 12-digit AWS Account ID.
+
+Resources:
+  CloudAuditorExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudAuditorExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${HubAccountId}:role/cloudauditor-lambda-role-dev'
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudAuditorReadOnlyAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:Get*
+                  - iam:List*
+                  - ec2:Describe*
+                  - rds:Describe*
+                  - s3:GetBucket*
+                  - s3:List*
+                  - resource-explorer-2:Search
+                  - resource-explorer-2:ListIndexes
+                  - resource-explorer-2:GetIndex
+                  - config:ListDiscoveredResources
+                  - cloudcontrol:ListResources
+                Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: The ARN of the CloudAuditor Execution Role
+    Value: !GetAtt CloudAuditorExecutionRole.Arn

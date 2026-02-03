@@ -21,6 +21,7 @@ class ResourceDiscoveryEngine:
     """
     Intelligent resource discovery engine.
     Uses hybrid approach: Resource Explorer -> Config -> Cloud Control API
+    Automatically handles multi-region discovery when needed.
     """
     
     def __init__(
@@ -42,6 +43,8 @@ class ResourceDiscoveryEngine:
         self.resource_explorer = None
         self.config_client = None
         self.cloud_control = None
+        self.is_aggregator = False
+        self.enabled_regions = []
         
         if self.config.use_resource_explorer:
             try:
@@ -49,6 +52,13 @@ class ResourceDiscoveryEngine:
                 if not self.resource_explorer.check_index_exists():
                     logger.warning("Resource Explorer index not found, disabling")
                     self.resource_explorer = None
+                else:
+                    # Check if it's an aggregator index
+                    self.is_aggregator = self.resource_explorer.is_aggregator_index()
+                    if self.is_aggregator:
+                        logger.info("Resource Explorer AGGREGATOR detected - will search all regions")
+                    else:
+                        logger.info("Resource Explorer LOCAL index detected - will query regions individually")
             except Exception as e:
                 logger.error(f"Failed to initialize Resource Explorer: {e}")
                 self.resource_explorer = None
@@ -70,11 +80,111 @@ class ResourceDiscoveryEngine:
                 logger.error(f"Failed to initialize Cloud Control client: {e}")
                 self.cloud_control = None
         
+        # Get list of enabled regions for multi-region discovery
+        self._initialize_regions()
+        
         logger.info(f"Discovery engine initialized with: "
                    f"ResourceExplorer={self.resource_explorer is not None}, "
                    f"Config={self.config_client is not None}, "
-                   f"CloudControl={self.cloud_control is not None}")
+                   f"CloudControl={self.cloud_control is not None}, "
+                   f"Aggregator={self.is_aggregator}, "
+                   f"Regions={len(self.enabled_regions)}")
     
+    def _initialize_regions(self):
+        """Get list of enabled AWS regions for multi-region discovery"""
+        try:
+            if self.config.regions:
+                # Use user-specified regions
+                self.enabled_regions = self.config.regions
+                logger.info(f"Using {len(self.enabled_regions)} user-specified regions")
+            else:
+                # Get all enabled regions from EC2
+                ec2 = self.session.client('ec2')
+                response = ec2.describe_regions(AllRegions=False)
+                self.enabled_regions = [r['RegionName'] for r in response['Regions']]
+                logger.info(f"Discovered {len(self.enabled_regions)} enabled regions")
+        except Exception as e:
+            logger.warning(f"Failed to enumerate regions, using default: {e}")
+            # Fallback to common regions
+            self.enabled_regions = [
+                'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+                'eu-west-1', 'eu-central-1', 'ap-southeast-1', 'ap-northeast-1'
+            ]
+    
+    def _get_assumed_role_session(
+        self, 
+        account_id: str, 
+        role_name: str = "CloudAuditorExecutionRole"
+    ) -> boto3.Session:
+        """
+        Get a boto3 session by assuming a role in another account.
+        
+        Args:
+            account_id: Target AWS account ID
+            role_name: Name of the role to assume
+            
+        Returns:
+            Boto3 session with assumed role credentials
+        """
+        role_arn = f"arn:aws:iam::{account_id}:role/{role_name}"
+        sts = self.session.client('sts')
+        
+        logger.info(f"Assuming role {role_arn}...")
+        response = sts.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName=f"CloudAuditorDiscovery-{account_id}"
+        )
+        
+        credentials = response['Credentials']
+        return boto3.Session(
+            aws_access_key_id=credentials['AccessKeyId'],
+            aws_secret_access_key=credentials['SecretAccessKey'],
+            aws_session_token=credentials['SessionToken'],
+            region_name=self.session.region_name
+        )
+
+    def discover_organization_resources(self, accounts: List[str]) -> DiscoveryResult:
+        """
+        Discover resources across multiple accounts.
+        
+        Args:
+            accounts: List of AWS Account IDs
+            
+        Returns:
+            Aggregate DiscoveryResult
+        """
+        total_result = DiscoveryResult(resources=[], total_count=0, success=True)
+        start_time = time.time()
+        
+        for account_id in accounts:
+            try:
+                logger.info(f"--- Starting discovery for account: {account_id} ---")
+                
+                # If target is local account, use current session
+                sts = self.session.client('sts')
+                local_account = sts.get_caller_identity()['Account']
+                
+                if account_id == local_account:
+                    engine = self
+                else:
+                    target_session = self._get_assumed_role_session(account_id)
+                    engine = ResourceDiscoveryEngine(session=target_session, config=self.config)
+                
+                result = engine.discover_all_resources(account_id=account_id)
+                total_result.resources.extend(result.resources)
+                total_result.errors.extend(result.errors)
+                
+            except Exception as e:
+                error_msg = f"Failed to discover account {account_id}: {str(e)}"
+                logger.error(error_msg)
+                total_result.add_error(error_msg)
+        
+        total_result.total_count = len(total_result.resources)
+        total_result.duration_seconds = time.time() - start_time
+        total_result.success = len(total_result.errors) == 0
+        
+        return total_result
+
     def discover_all_resources(
         self,
         account_id: Optional[str] = None
@@ -88,6 +198,10 @@ class ResourceDiscoveryEngine:
         Returns:
             DiscoveryResult with all discovered resources
         """
+        # If config specifies multiple accounts and we are in the hub, delegate
+        if self.config.accounts and not account_id:
+            return self.discover_organization_resources(self.config.accounts)
+
         start_time = time.time()
         
         # Auto-detect account ID if not provided
@@ -172,27 +286,81 @@ class ResourceDiscoveryEngine:
         
         return result
     
+    
     def _discover_via_resource_explorer(self, account_id: str) -> List[Resource]:
-        """Discover resources using Resource Explorer"""
-        resources = []
+        """
+        Discover resources using Resource Explorer.
+        Automatically handles multi-region discovery if LOCAL index detected.
         
-        # Build filters
-        filters = {}
-        if self.config.regions:
-            filters['regions'] = self.config.regions
-        if self.config.include_types:
-            filters['resource_types'] = self.config.include_types
+        Args:
+            account_id: AWS account ID
+            
+        Returns:
+            List of discovered resources
+        """
+        if not self.resource_explorer:
+            return []
         
-        # List all resources
-        for raw_resource in self.resource_explorer.list_all_resources(filters):
+        # If aggregator index, query once and get all regions
+        if self.is_aggregator:
+            logger.info("Using AGGREGATOR index for global discovery")
+            resources = []
+            
+            # Build filters
+            filters = {}
+            if self.config.include_types:
+                filters['resource_types'] = self.config.include_types
+            
+            # Query Resource Explorer
+            for raw_resource in self.resource_explorer.list_all_resources(filters=filters):
+                try:
+                    resource = self.resource_explorer.convert_to_resource(raw_resource)
+                    if resource.account_id == account_id or resource.account_id == 'unknown':
+                        resources.append(resource)
+                except Exception as e:
+                    logger.warning(f"Failed to convert resource: {e}")
+                    continue
+            
+            return resources
+        
+        # If LOCAL index, query each region individually
+        logger.info(f"Using LOCAL index - querying {len(self.enabled_regions)} regions individually")
+        all_resources = []
+        
+        for region in self.enabled_regions:
             try:
-                resource = self.resource_explorer.convert_to_resource(raw_resource)
-                if resource.account_id == account_id or resource.account_id == 'unknown':
-                    resources.append(resource)
+                logger.info(f"Discovering resources in {region}...")
+                # Create region-specific Resource Explorer client
+                regional_client = ResourceExplorerClient(self.session, region=region)
+                
+                # Check if index exists in this region
+                if not regional_client.check_index_exists():
+                    logger.debug(f"No Resource Explorer index in {region}, skipping")
+                    continue
+                
+                # Build filters
+                filters = {}
+                if self.config.include_types:
+                    filters['resource_types'] = self.config.include_types
+                
+                # Query Resource Explorer for this region
+                for raw_resource in regional_client.list_all_resources(filters=filters):
+                    try:
+                        resource = regional_client.convert_to_resource(raw_resource)
+                        if resource.account_id == account_id or resource.account_id == 'unknown':
+                            all_resources.append(resource)
+                    except Exception as e:
+                        logger.warning(f"Failed to convert resource in {region}: {e}")
+                        continue
+                
+                logger.info(f"Found {len(all_resources) - len([r for r in all_resources if r.region != region])} resources in {region}")
+                
             except Exception as e:
-                logger.error(f"Failed to convert resource: {e}")
+                logger.warning(f"Failed to discover resources in {region}: {e}")
+                continue
         
-        return resources
+        logger.info(f"Multi-region discovery complete: {len(all_resources)} total resources")
+        return all_resources
     
     def _discover_via_config(self, account_id: str) -> List[Resource]:
         """Discover resources using AWS Config"""

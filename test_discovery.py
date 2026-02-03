@@ -2,10 +2,17 @@
 """
 Test script for resource discovery POC
 Run this to test the discovery engine locally
+
+Usage:
+    python test_discovery.py                          # Use default credentials
+    python test_discovery.py --profile cloudAuditor   # Use specific profile
+    AWS_PROFILE=cloudAuditor python test_discovery.py # Use env variable
 """
+import argparse
 import logging
 import sys
 import json
+import os
 from typing import Dict
 
 import boto3
@@ -41,17 +48,18 @@ def print_summary(summary: Dict[str, int]):
     print("="*80 + "\n")
 
 
-def test_resource_explorer_only():
+def test_resource_explorer_only(session=None, regions=None):
     """Test discovery using only Resource Explorer"""
     print("\n🔍 Testing Resource Explorer Only...")
     
     config = DiscoveryConfig(
         use_resource_explorer=True,
         use_config=False,
-        use_cloud_control=False
+        use_cloud_control=False,
+        regions=regions
     )
     
-    engine = ResourceDiscoveryEngine(config=config)
+    engine = ResourceDiscoveryEngine(config=config, session=session)
     result = engine.discover_all_resources()
     
     print(f"✅ Found {result.total_count} resources in {result.duration_seconds:.2f}s")
@@ -65,17 +73,18 @@ def test_resource_explorer_only():
     return result
 
 
-def test_config_only():
+def test_config_only(session=None, regions=None):
     """Test discovery using only AWS Config"""
     print("\n🔍 Testing AWS Config Only...")
     
     config = DiscoveryConfig(
         use_resource_explorer=False,
         use_config=True,
-        use_cloud_control=False
+        use_cloud_control=False,
+        regions=regions
     )
     
-    engine = ResourceDiscoveryEngine(config=config)
+    engine = ResourceDiscoveryEngine(config=config, session=session)
     result = engine.discover_all_resources()
     
     print(f"✅ Found {result.total_count} resources in {result.duration_seconds:.2f}s")
@@ -89,17 +98,18 @@ def test_config_only():
     return result
 
 
-def test_hybrid_approach():
+def test_hybrid_approach(session=None, regions=None):
     """Test discovery using hybrid approach (default)"""
     print("\n🔍 Testing Hybrid Approach (Resource Explorer + Config)...")
     
     config = DiscoveryConfig(
         use_resource_explorer=True,
         use_config=True,
-        use_cloud_control=False
+        use_cloud_control=False,
+        regions=regions
     )
     
-    engine = ResourceDiscoveryEngine(config=config)
+    engine = ResourceDiscoveryEngine(config=config, session=session)
     result = engine.discover_all_resources()
     
     print(f"✅ Found {result.total_count} resources in {result.duration_seconds:.2f}s")
@@ -123,7 +133,7 @@ def test_hybrid_approach():
     return result
 
 
-def test_filtered_discovery():
+def test_filtered_discovery(session=None, regions=None):
     """Test discovery with resource type filters"""
     print("\n🔍 Testing Filtered Discovery (EC2 and S3 only)...")
     
@@ -136,10 +146,11 @@ def test_filtered_discovery():
             'AWS::EC2::Volume',
             'AWS::EC2::SecurityGroup',
             'AWS::S3::Bucket'
-        ]
+        ],
+        regions=regions
     )
     
-    engine = ResourceDiscoveryEngine(config=config)
+    engine = ResourceDiscoveryEngine(config=config, session=session)
     result = engine.discover_all_resources()
     
     print(f"✅ Found {result.total_count} resources in {result.duration_seconds:.2f}s")
@@ -170,40 +181,101 @@ def export_to_json(result, filename='discovered_resources.json'):
 
 def main():
     """Main test function"""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Test AWS Resource Discovery Engine',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Use default credentials
+  python test_discovery.py
+  
+  # Use specific AWS profile
+  python test_discovery.py --profile cloudAuditor
+  
+  # Use environment variable
+  AWS_PROFILE=cloudAuditor python test_discovery.py
+  
+  # Export to custom file
+  python test_discovery.py --output my_resources.json
+        """
+    )
+    parser.add_argument(
+        '--profile',
+        help='AWS profile name to use (overrides AWS_PROFILE env var)',
+        default=None
+    )
+    parser.add_argument(
+        '--output',
+        help='Output JSON file path',
+        default='discovered_resources.json'
+    )
+    parser.add_argument(
+        '--test',
+        choices=['hybrid', 'explorer', 'config', 'filtered'],
+        default='hybrid',
+        help='Which test to run (default: hybrid)'
+    )
+    parser.add_argument(
+        '--regions',
+        nargs='+',
+        help='Specific AWS regions to search (default: all enabled regions). Example: --regions us-east-1 us-west-2'
+    )
+    
+    args = parser.parse_args()
+    
     print("="*80)
     print("AWS RESOURCE DISCOVERY POC - TEST SUITE")
     print("="*80)
     
-    # Check AWS credentials
+    # Create AWS session with profile support
+    profile_name = args.profile or os.environ.get('AWS_PROFILE')
+    
     try:
-        session = boto3.Session()
+        if profile_name:
+            print(f"\n🔑 Using AWS profile: {profile_name}")
+            session = boto3.Session(profile_name=profile_name)
+        else:
+            print("\n🔑 Using default AWS credentials")
+            session = boto3.Session()
+        
+        # Verify credentials
         sts = session.client('sts')
         identity = sts.get_caller_identity()
-        print(f"\n✅ AWS Credentials OK")
+        print(f"✅ AWS Credentials OK")
         print(f"   Account: {identity['Account']}")
         print(f"   User/Role: {identity['Arn']}")
+        print(f"   Region: {session.region_name or 'default'}")
+        
+        # Show region configuration
+        if args.regions:
+            print(f"   Searching regions: {', '.join(args.regions)}")
+        else:
+            print(f"   Searching regions: all enabled regions")
+        
     except Exception as e:
         print(f"\n❌ AWS Credentials Error: {e}")
         print("   Please configure AWS credentials and try again.")
+        print("\n   Options:")
+        print("   1. Use --profile flag: python test_discovery.py --profile myprofile")
+        print("   2. Set AWS_PROFILE env var: export AWS_PROFILE=myprofile")
+        print("   3. Configure default credentials: aws configure")
         return
     
     # Run tests
     try:
-        # Test 1: Hybrid approach (recommended)
-        result = test_hybrid_approach()
+        if args.test == 'hybrid':
+            result = test_hybrid_approach(session, regions=args.regions)
+        elif args.test == 'explorer':
+            result = test_resource_explorer_only(session, regions=args.regions)
+        elif args.test == 'config':
+            result = test_config_only(session, regions=args.regions)
+        elif args.test == 'filtered':
+            result = test_filtered_discovery(session, regions=args.regions)
         
         # Export results
         if result.total_count > 0:
-            export_to_json(result)
-        
-        # Test 2: Resource Explorer only (if available)
-        # test_resource_explorer_only()
-        
-        # Test 3: Config only (if available)
-        # test_config_only()
-        
-        # Test 4: Filtered discovery
-        # test_filtered_discovery()
+            export_to_json(result, args.output)
         
         print("\n" + "="*80)
         print("✅ POC TEST COMPLETE")

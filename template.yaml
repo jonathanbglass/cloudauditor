@@ -79,7 +79,7 @@ Conditions:
 
 Globals:
   Function:
-    Runtime: python3.14
+    Runtime: python3.13
     Timeout: 120
     MemorySize: 512
     VpcConfig:
@@ -305,6 +305,7 @@ Resources:
       BackupRetentionPeriod: !If [EnableBackups, !Ref BackupRetentionDays, 1]
       PreferredBackupWindow: '03:00-04:00'
       PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      EnableHttpEndpoint: true  # Enable Data API for Query Editor
       EnableIAMDatabaseAuthentication: true
       ServerlessV2ScalingConfiguration:
         MinCapacity: !Ref AuroraMinCapacity
@@ -346,6 +347,27 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub cloudauditor-db-secret-${Environment}
+
+  # S3 Bucket for storing generated reports
+  ReportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub cloudauditor-reports-${AWS::AccountId}-${Environment}
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldReports
+            Status: Enabled
+            ExpirationInDays: 30
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub cloudauditor-reports-${Environment}
 
   # ==================== IAM ROLES ====================
   
@@ -393,6 +415,8 @@ Resources:
                 Action:
                   - resource-explorer-2:Search
                   - resource-explorer-2:ListIndexes
+                  - resource-explorer-2:GetIndex
+                  - resource-explorer-2:ListSupportedResourceTypes
                   - resource-explorer-2:GetResource
                   - config:DescribeConfigurationRecorders
                   - config:DescribeConfigurationRecorderStatus
@@ -407,7 +431,9 @@ Resources:
                 Action:
                   - sts:AssumeRole
                   - sts:GetCallerIdentity
-                Resource: '*'
+                Resource: 
+                  - '*'
+                  - 'arn:aws:iam::*:role/CloudAuditorExecutionRole'
               
               # Secrets Manager access for database credentials
               - Effect: Allow
@@ -422,53 +448,31 @@ Resources:
                   - rds-db:connect
                 Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${AuroraCluster}/${DatabaseMasterUsername}'
               
-              # SNS publishing
+              # S3 access for report generation
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ReportBucket.Arn
+                  - !Sub '${ReportBucket.Arn}/*'
+              
+              # SNS publishing (for future use)
               - Effect: Allow
                 Action:
                   - sns:Publish
-                Resource: !Ref AuditorTopic
-
-  # SNS Topic for Lambda communication
-  AuditorTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      TopicName: !Sub cloudauditor-topic-${Environment}
-      DisplayName: CloudAuditor Processing Topic
-
-  # Manager Lambda Function
-  ManagerFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub cloudauditor-manager-${Environment}
-      CodeUri: .
-      Handler: manager.lambda_handler
-      Description: CloudAuditor Manager - Initiates audit scans
-      Role: !GetAtt CloudAuditorLambdaRole.Arn
-      Environment:
-        Variables:
-          SNS_TOPIC_ARN: !Ref AuditorTopic
-      Events:
-        ScheduledEvent:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 2 * * ? *)  # Daily at 2 AM UTC
-            Description: Daily audit scan
-            Enabled: true
-
-  # Processor Lambda Function
-  ProcessorFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub cloudauditor-processor-${Environment}
-      CodeUri: .
-      Handler: processor.lambda_handler
-      Description: CloudAuditor Processor - Processes audit data
-      Role: !GetAtt CloudAuditorLambdaRole.Arn
-      Events:
-        SNSEvent:
-          Type: SNS
-          Properties:
-            Topic: !Ref AuditorTopic
+                Resource: '*'
+              
+              # AWS Organizations (for auto-discovery)
+              - Effect: Allow
+                Action:
+                  - organizations:DescribeOrganization
+                  - organizations:ListAccounts
+                  - cloudformation:DescribeStackSet
+                  - cloudformation:ListStackSets
+                Resource: '*'
 
   # Resource Discovery Lambda Function
   ResourceDiscoveryFunction:
@@ -481,6 +485,17 @@ Resources:
       Role: !GetAtt CloudAuditorLambdaRole.Arn
       Timeout: 300  # 5 minutes for discovery
       MemorySize: 1024
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
       Events:
         ScheduledEvent:
           Type: Schedule
@@ -489,27 +504,88 @@ Resources:
             Description: Daily resource discovery
             Enabled: true
 
-  # SNS Topic Permission for Processor Lambda
-  ProcessorFunctionInvokePermission:
-    Type: AWS::Lambda::Permission
+  # Database Query Lambda Function (for remote queries)
+  DatabaseQueryFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Ref ProcessorFunction
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref AuditorTopic
+      FunctionName: !Sub cloudauditor-query-${Environment}
+      CodeUri: .
+      Handler: database_query_lambda.lambda_handler
+      Description: CloudAuditor Database Query (invoke remotely)
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 60
+      MemorySize: 512
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
+
+  # Report Generator Lambda Function (generates Excel reports from database)
+  ReportGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-report-generator-${Environment}
+      CodeUri: .
+      Handler: report_generator_lambda.lambda_handler
+      Description: CloudAuditor Report Generator (generates Excel from Aurora)
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 300
+      MemorySize: 1024
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
+          REPORT_BUCKET: !Ref ReportBucket
+
+  # Database Initialization Lambda Function
+  DatabaseInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub cloudauditor-db-init-${Environment}
+      CodeUri: database_init/
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Description: Initialize CloudAuditor database schema
+      Role: !GetAtt CloudAuditorLambdaRole.Arn
+      Timeout: 60
+      MemorySize: 256
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+      Environment:
+        Variables:
+          DB_SECRET_ARN: !Ref DatabaseSecret
+          DB_HOST: !GetAtt AuroraCluster.Endpoint.Address
+          DB_NAME: !Ref DatabaseName
+
+  # Custom Resource to trigger database initialization
+  DatabaseInitializer:
+    Type: Custom::DatabaseInit
+    DependsOn:
+      - AuroraInstance
+      - DatabaseSecret
+    Properties:
+      ServiceToken: !GetAtt DatabaseInitFunction.Arn
+      Timestamp: !Ref AWS::StackId  # Force update on stack changes
 
   # CloudWatch Log Groups with retention
-  ManagerLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/cloudauditor-manager-${Environment}
-      RetentionInDays: 30
-
-  ProcessorLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/cloudauditor-processor-${Environment}
-      RetentionInDays: 30
 
   DiscoveryLogGroup:
     Type: AWS::Logs::LogGroup
@@ -518,29 +594,17 @@ Resources:
       RetentionInDays: 30
 
 Outputs:
-  ManagerFunctionArn:
-    Description: Manager Lambda Function ARN
-    Value: !GetAtt ManagerFunction.Arn
-    Export:
-      Name: !Sub ${AWS::StackName}-ManagerFunctionArn
-
-  ProcessorFunctionArn:
-    Description: Processor Lambda Function ARN
-    Value: !GetAtt ProcessorFunction.Arn
-    Export:
-      Name: !Sub ${AWS::StackName}-ProcessorFunctionArn
-
   ResourceDiscoveryFunctionArn:
     Description: Resource Discovery Lambda Function ARN
     Value: !GetAtt ResourceDiscoveryFunction.Arn
     Export:
       Name: !Sub ${AWS::StackName}-ResourceDiscoveryFunctionArn
 
-  SNSTopicArn:
-    Description: SNS Topic ARN
-    Value: !Ref AuditorTopic
+  DatabaseQueryFunctionArn:
+    Description: Database Query Lambda Function ARN
+    Value: !GetAtt DatabaseQueryFunction.Arn
     Export:
-      Name: !Sub ${AWS::StackName}-SNSTopicArn
+      Name: !Sub ${AWS::StackName}-DatabaseQueryFunctionArn
 
   LambdaRoleArn:
     Description: Lambda Execution Role ARN
