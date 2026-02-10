@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"success\": true, \"report_type\": \"summary\", \"results\": {\"total_resources\": 187, \"unique_resource_types\": 39, \"accounts_with_resources\": 2, \"monitored_accounts\": 4, \"latest_scan\": \"2026-02-02 14:49:16.201694+00:00\"}}"}

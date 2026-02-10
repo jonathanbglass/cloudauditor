@@ -1,0 +1,3 @@
+{
+    "query": "ALTER TABLE resources ADD COLUMN IF NOT EXISTS inserted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(); CREATE INDEX IF NOT EXISTS idx_resources_inserted ON resources(inserted_at DESC);"
+}

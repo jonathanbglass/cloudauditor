@@ -1,0 +1,1 @@
+{"statusCode": 500, "body": "{\"success\": false, \"error\": \"the last operation didn't produce records (command status: DELETE 30)\"}"}

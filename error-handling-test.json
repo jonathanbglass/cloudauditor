@@ -1,0 +1,1 @@
+{"statusCode": 500, "body": "{\"success\": false, \"error\": \"relation \\\"monitored_accounts\\\" does not exist\\nLINE 2:                 UPDATE monitored_accounts \\n                               ^\"}"}
