@@ -27,6 +27,7 @@ def lambda_handler(event, context):
         conn = db._get_connection()
         
         results = {}
+        account_ids = event.get('account_ids')
         
         if custom_query:
             # Execute custom query (be careful with this!)
@@ -42,24 +43,36 @@ def lambda_handler(event, context):
         
         elif report_type == 'summary':
             with conn.cursor() as cur:
+                # Build account filter
+                acct_where = ""
+                acct_params = []
+                if account_ids:
+                    placeholders = ", ".join(["%s"] * len(account_ids))
+                    acct_where = f"WHERE account_id IN ({placeholders})"
+                    acct_params = list(account_ids)
+                    logger.info(f"Summary filtered by {len(account_ids)} accounts")
+
                 # Total resources
-                cur.execute("SELECT COUNT(*) FROM resources")
+                cur.execute(f"SELECT COUNT(*) FROM resources {acct_where}", acct_params or None)
                 total_resources = cur.fetchone()[0]
                 
                 # Unique resource types
-                cur.execute("SELECT COUNT(DISTINCT resource_type) FROM resources")
+                cur.execute(f"SELECT COUNT(DISTINCT resource_type) FROM resources {acct_where}", acct_params or None)
                 unique_types = cur.fetchone()[0]
                 
                 # Unique accounts
-                cur.execute("SELECT COUNT(DISTINCT account_id) FROM resources")
+                cur.execute(f"SELECT COUNT(DISTINCT account_id) FROM resources {acct_where}", acct_params or None)
                 unique_accounts = cur.fetchone()[0]
                 
-                # Monitored accounts
-                cur.execute("SELECT COUNT(*) FROM monitored_accounts")
+                # Monitored accounts (scoped if account_ids provided)
+                if account_ids:
+                    cur.execute(f"SELECT COUNT(*) FROM monitored_accounts WHERE account_id IN ({placeholders})", acct_params)
+                else:
+                    cur.execute("SELECT COUNT(*) FROM monitored_accounts")
                 monitored = cur.fetchone()[0]
                 
                 # Latest scan
-                cur.execute("SELECT MAX(discovered_at) FROM resources")
+                cur.execute(f"SELECT MAX(discovered_at) FROM resources {acct_where}", acct_params or None)
                 latest_scan = cur.fetchone()[0]
                 
                 results = {
@@ -94,13 +107,21 @@ def lambda_handler(event, context):
         
         elif report_type == 'by_type':
             with conn.cursor() as cur:
-                cur.execute("""
+                acct_where = ""
+                acct_params = []
+                if account_ids:
+                    placeholders = ", ".join(["%s"] * len(account_ids))
+                    acct_where = f"WHERE account_id IN ({placeholders})"
+                    acct_params = list(account_ids)
+
+                cur.execute(f"""
                     SELECT resource_type, COUNT(*) as count
                     FROM resources
+                    {acct_where}
                     GROUP BY resource_type
                     ORDER BY count DESC
                     LIMIT %s
-                """, (limit,))
+                """, acct_params + [limit])
                 
                 resource_types = []
                 for row in cur.fetchall():
