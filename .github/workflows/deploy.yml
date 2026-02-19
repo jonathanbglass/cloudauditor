@@ -196,6 +196,7 @@ jobs:
             --function-name cloudauditor-discovery-${{ matrix.environment }} \
             --payload '{"test": true}' \
             --cli-binary-format raw-in-base64-out \
+            --cli-read-timeout 120 \
             response.json
           cat response.json
 
