@@ -1,0 +1,3 @@
+{
+    "query": "SELECT account_id, COUNT(*) as total, COUNT(DISTINCT resource_id) as unique_resources FROM resources GROUP BY account_id ORDER BY account_id"
+}
