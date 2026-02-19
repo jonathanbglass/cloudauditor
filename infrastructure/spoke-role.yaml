@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudAuditor - Cross-Account Execution Role for Member Accounts
+Description: CloudAuditor - Cross-Account Execution Role and Resource Explorer for Member Accounts
 
 Parameters:
   HubAccountId:
@@ -9,6 +9,13 @@ Parameters:
     ConstraintDescription: Must be a 12-digit AWS Account ID.
 
 Resources:
+  # Resource Explorer LOCAL index for this account
+  # Enables CloudAuditor discovery engine to inventory resources via the Search API
+  ResourceExplorerIndex:
+    Type: AWS::ResourceExplorer2::Index
+    Properties:
+      Type: LOCAL
+
   CloudAuditorExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -36,6 +43,7 @@ Resources:
                   - resource-explorer-2:Search
                   - resource-explorer-2:ListIndexes
                   - resource-explorer-2:GetIndex
+                  - resource-explorer-2:ListSupportedResourceTypes
                   - config:ListDiscoveredResources
                   - cloudcontrol:ListResources
                 Resource: '*'
@@ -44,3 +52,7 @@ Outputs:
   RoleArn:
     Description: The ARN of the CloudAuditor Execution Role
     Value: !GetAtt CloudAuditorExecutionRole.Arn
+
+  ResourceExplorerIndexArn:
+    Description: The ARN of the Resource Explorer index
+    Value: !GetAtt ResourceExplorerIndex.Arn

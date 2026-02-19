@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"success\": true, \"report_type\": \"summary\", \"results\": {\"query\": \"SELECT COUNT(*) as total_rows, COUNT(DISTINCT (resource_id, resource_type, region, account_id)) as unique_keys FROM resources\", \"rows\": [[845, 845]], \"row_count\": 1}}"}

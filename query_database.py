@@ -1,11 +1,46 @@
 #!/usr/bin/env python3
 """
-Query CloudAuditor Database
-Simple script to query and report on discovered resources
+Query CloudAuditor Database (Standalone)
+Simple script to query and report on discovered resources without Lambda dependencies
 """
 import argparse
 import sys
-from lib.database import DatabaseClient
+import json
+import boto3
+import psycopg
+
+def get_db_config(profile='cloudAuditor', region='us-east-1'):
+    """Get database configuration from AWS."""
+    session = boto3.Session(profile_name=profile, region_name=region)
+    
+    # Get secret ARN from CloudFormation stack outputs
+    cfn = session.client('cloudformation')
+    try:
+        response = cfn.describe_stacks(StackName='cloudauditor-dev')
+        outputs = {o['OutputKey']: o['OutputValue'] for o in response['Stacks'][0]['Outputs']}
+        
+        db_endpoint = outputs.get('DatabaseEndpoint')
+        secret_arn = outputs.get('DatabaseSecretArn')
+        
+        if not db_endpoint or not secret_arn:
+            print("Error: Could not find database endpoint or secret ARN in stack outputs", file=sys.stderr)
+            sys.exit(1)
+        
+        # Get credentials from Secrets Manager
+        sm = session.client('secretsmanager')
+        secret_response = sm.get_secret_value(SecretId=secret_arn)
+        secret = json.loads(secret_response['SecretString'])
+        
+        return {
+            'host': db_endpoint,
+            'port': 5432,
+            'dbname': secret.get('dbname', 'cloudauditor'),
+            'user': secret.get('username'),
+            'password': secret.get('password')
+        }
+    except Exception as e:
+        print(f"Error fetching database configuration: {e}", file=sys.stderr)
+        sys.exit(1)
 
 def main():
     parser = argparse.ArgumentParser(description='Query CloudAuditor database')
@@ -15,6 +50,8 @@ def main():
     parser.add_argument('--by-type', action='store_true', help='Group resources by type')
     parser.add_argument('--by-account', action='store_true', help='Group resources by account')
     parser.add_argument('--limit', type=int, default=100, help='Limit results (default: 100)')
+    parser.add_argument('--profile', default='cloudAuditor', help='AWS profile name (default: cloudAuditor)')
+    parser.add_argument('--region', default='us-east-1', help='AWS region (default: us-east-1)')
     
     args = parser.parse_args()
     
@@ -23,8 +60,11 @@ def main():
         args.summary = True
     
     try:
-        db = DatabaseClient()
-        conn = db._get_connection()
+        print(f"Fetching database configuration from AWS (profile: {args.profile})...")
+        db_config = get_db_config(args.profile, args.region)
+        
+        print(f"Connecting to database at {db_config['host']}...")
+        conn = psycopg.connect(**db_config)
         
         if args.summary:
             print("\n=== CLOUDAUDITOR DATABASE SUMMARY ===\n")
@@ -133,9 +173,12 @@ def main():
                     print(f"{account:<15} {region:<15} {rtype:<40} {rid[:50]:<50}")
         
         print()
+        conn.close()
         
     except Exception as e:
         print(f"Error querying database: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == '__main__':

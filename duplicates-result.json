@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"success\": true, \"report_type\": \"summary\", \"results\": {\"query\": \"SELECT resource_type, region, COUNT(*) as count FROM resources WHERE resource_type LIKE 'AWS::IAM::%' GROUP BY resource_type, region ORDER BY resource_type, region\", \"rows\": [], \"row_count\": 0}}"}

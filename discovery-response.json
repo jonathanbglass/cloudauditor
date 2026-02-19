@@ -1,0 +1,1 @@
+{"errorMessage": "Unable to import module 'resource_discovery_lambda': No module named 'psycopg'", "errorType": "Runtime.ImportModuleError", "requestId": "", "stackTrace": []}

@@ -1,0 +1,1734 @@
+{
+  "total_count": 94,
+  "success": true,
+  "duration_seconds": 0.47878146171569824,
+  "errors": [],
+  "resources": [
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:route-table/rtb-0b0db5ba9ba1908fa",
+      "resource_type": "ec2:route-table",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-public-rt-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "PublicRouteTable"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:07+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-interface/eni-00ad70cbfaa755be6",
+      "resource_type": "ec2:network-interface",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:52+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/aws-service-role/resource-explorer-2.amazonaws.com/AWSServiceRoleForResourceExplorer",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:39:00+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:user/default",
+      "resource_type": "memorydb:user",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 16:01:41+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:parametergroup/default.memorydb-valkey7",
+      "resource_type": "memorydb:parametergroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 05:07:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group/sg-0eaf0c18a3c77d4dc",
+      "resource_type": "ec2:security-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:19+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:group/FaaSAdmin",
+      "resource_type": "iam:group",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-25 14:52:23+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-0243b90fe425217f3",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-private-subnet-1-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "PrivateSubnet1"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:34+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:internet-gateway/igw-05370bd7b8162577d",
+      "resource_type": "ec2:internet-gateway",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-29 17:39:45+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-0eb32751c6a998d7a",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 11:51:26+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-04b6b78e8e0e89a9d",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 11:51:26+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:rds:us-east-1:286861024884:cluster:cloudauditor-dev-auroracluster-foe7ofebanp6",
+      "resource_type": "rds:cluster",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Environment",
+            "Value": "dev"
+          },
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-aurora-cluster-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "AuroraCluster"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:06:04+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:athena:us-east-1:286861024884:datacatalog/AwsDataCatalog",
+      "resource_type": "athena:datacatalog",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-30 12:26:48+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:logs:us-east-1:286861024884:log-group:/aws/lambda/cloudauditor-discovery-dev",
+      "resource_type": "logs:log-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "DiscoveryLogGroup"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:52:31+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group/sg-028e6bed245c5f210",
+      "resource_type": "ec2:security-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-lambda-sg-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "LambdaSecurityGroup"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:35+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:logs:us-east-1:286861024884:log-group:/aws/lambda/cloudauditor-manager-dev",
+      "resource_type": "logs:log-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ManagerLogGroup"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:52:31+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:cloudformation:us-east-1:286861024884:stack/aws-sam-cli-managed-default/74eead80-feff-11f0-a252-12b117807b41",
+      "resource_type": "cloudformation:stack",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "ManagedStackSource",
+            "Value": "AwsSamCli"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:49:34+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:user/jonathan_faas_admin",
+      "resource_type": "iam:user",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-22 03:07:29+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:rds:us-east-1:286861024884:cluster:cluster-3toz6asyo5exwgybpoapdnk5lq",
+      "resource_type": "rds:cluster",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Environment",
+            "Value": "dev"
+          },
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-aurora-cluster-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "AuroraCluster"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:51+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/aws-service-role/stacksets.cloudformation.amazonaws.com/AWSServiceRoleForCloudFormationStackSetsOrgAdmin",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:38:59+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:elastic-ip/eipalloc-0f911bb14879d257d",
+      "resource_type": "ec2:elastic-ip",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "NATGatewayEIP"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:08+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:events:us-east-1:286861024884:rule/cloudauditor-dev-ResourceDiscoveryFunctionScheduled-aEVVuPaiewNx",
+      "resource_type": "events:rule",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ResourceDiscoveryFunctionScheduledEvent"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:54:42+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/FleetMarshalRole",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:39:01+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:policy/service-role/AWSControlTowerAdminPolicy",
+      "resource_type": "iam:policy",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 02:32:07+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:s3:us-east-1:286861024884:storage-lens/default-account-dashboard",
+      "resource_type": "s3:storage-lens",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-30 13:39:59+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/service-role/AWSControlTowerCloudTrailRole",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:38:58+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:parametergroup/default.memorydb-redis7.search",
+      "resource_type": "memorydb:parametergroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 05:07:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-acl/acl-07e13d95a813a82ed",
+      "resource_type": "ec2:network-acl",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 08:01:14+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:policy/service-role/AWSControlTowerCloudTrailRolePolicy",
+      "resource_type": "iam:policy",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 02:32:07+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:parametergroup/default.memorydb-redis7",
+      "resource_type": "memorydb:parametergroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 05:07:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-013f58c353e3d5f25",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 11:51:26+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ce::286861024884:anomalysubscription/fe5f82ac-bfc5-4d76-82ca-76efa1bf6029",
+      "resource_type": "ce:anomalysubscription",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-17 21:34:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:logs:us-east-1:286861024884:log-group:/aws/lambda/cloudauditor-db-init-dev",
+      "resource_type": "logs:log-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:29:01+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:rds:us-east-1:286861024884:subgrp:cloudauditor-db-subnet-group-dev",
+      "resource_type": "rds:subgrp",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-db-subnet-group-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "DBSubnetGroup"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:44+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:resource-explorer-2:us-east-1:286861024884:index/cab30017-d883-4d5f-b6af-761a87b1e984",
+      "resource_type": "resource-explorer-2:index",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-25 20:13:47+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-00ac9379de93b78ed",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 11:51:26+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:logs:us-east-1:286861024884:log-group:/aws/lambda/cloudauditor-processor-dev",
+      "resource_type": "logs:log-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ProcessorLogGroup"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:52:31+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-04f62dfdb94da5f7c",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-private-subnet-2-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "PrivateSubnet2"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:33+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-interface/eni-0d24cc5af2fa1b074",
+      "resource_type": "ec2:network-interface",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:52:31+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:parametergroup/default.memorydb-redis7.search.preview",
+      "resource_type": "memorydb:parametergroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 05:07:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:route-table/rtb-0e20b8f8225e55f52",
+      "resource_type": "ec2:route-table",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-10 05:58:55+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:cloudformation:us-east-1:286861024884:stackset/FleetMarshalStackSetv2:66ba986d-97e0-4e34-9857-be3fc8a3bbab",
+      "resource_type": "cloudformation:stackset",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-23 05:27:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-acl/acl-02dfe9c97ecf921ed",
+      "resource_type": "ec2:network-acl",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:19+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:parametergroup/default.memorydb-valkey7.search",
+      "resource_type": "memorydb:parametergroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 05:07:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-09e2e033b7537c8dc",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-private-subnet-2-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "PrivateSubnet2"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:36+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:parametergroup/default.memorydb-redis6",
+      "resource_type": "memorydb:parametergroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 05:07:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:events:us-east-1:286861024884:event-bus/default",
+      "resource_type": "events:event-bus",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-29 12:54:30+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group-rule/sgr-0b3ce2d7b47e01e73",
+      "resource_type": "ec2:security-group-rule",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-24 14:38:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:events:us-east-1:286861024884:rule/cloudauditor-dev-ManagerFunctionScheduledEvent-GAMrYgzMJ5YZ",
+      "resource_type": "events:rule",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ManagerFunctionScheduledEvent"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:54:42+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:cloudformation:us-east-1:286861024884:stack/FleetMarshal-Remote/3ab56780-dadd-11f0-9919-0affeb9748af",
+      "resource_type": "cloudformation:stack",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-23 06:31:08+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:apprunner:us-east-1:286861024884:autoscalingconfiguration/DefaultConfiguration/1/00000000000000000000000000000001",
+      "resource_type": "apprunner:autoscalingconfiguration",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 12:25:50+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:vpc/vpc-0ee36eef5c8114e37",
+      "resource_type": "ec2:vpc",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Environment",
+            "Value": "dev"
+          },
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-vpc-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "VPC"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:31+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/FleetMarshal-SecurityAudit",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:39:01+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:rds:us-east-1:286861024884:pg:default.aurora-postgresql15",
+      "resource_type": "rds:pg",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:28+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/aws-service-role/trustedadvisor.amazonaws.com/AWSServiceRoleForTrustedAdvisor",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:39:00+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:elasticache:us-east-1:286861024884:user:default",
+      "resource_type": "elasticache:user",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 08:05:52+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-0083fcb1665dd9bc6",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 11:51:26+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:internet-gateway/igw-0d3de383282c63bc6",
+      "resource_type": "ec2:internet-gateway",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-igw-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "InternetGateway"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:19+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:route-table/rtb-00ec15e6a6b53a7e6",
+      "resource_type": "ec2:route-table",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-private-rt-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "PrivateRouteTable"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:53:03+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:rds:us-east-1:286861024884:db:cloudauditor-dev-aurorainstance-ywjnfemkzqit",
+      "resource_type": "rds:db",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-aurora-instance-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "AuroraInstance"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:28+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:resource-explorer-2:us-east-1:286861024884:view/us-east-1/82d771c0-49d5-40dc-9164-24bcdd92b66c",
+      "resource_type": "resource-explorer-2:view",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 22:28:12+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:user/gh_actions_admin",
+      "resource_type": "iam:user",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:11:44+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:cloudformation:us-east-1:286861024884:stackset/FleetMarshalRemediation:7487797d-cc7e-4b47-920c-ddd1f85b1c1c",
+      "resource_type": "cloudformation:stackset",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-23 05:27:38+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:lambda:us-east-1:286861024884:function:cloudauditor-db-init-dev",
+      "resource_type": "lambda:function",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "lambda:createdBy",
+            "Value": "SAM"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "DatabaseInitFunction"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:26:55+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:natgateway/nat-0d8f09dcae1361fe0",
+      "resource_type": "ec2:natgateway",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-nat-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "NATGateway"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:11+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/service-role/AWSControlTowerAdmin",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:38:57+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:lambda:us-east-1:286861024884:function:cloudauditor-processor-dev",
+      "resource_type": "lambda:function",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "lambda:createdBy",
+            "Value": "SAM"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ProcessorFunction"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:26:55+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:policy/service-role/AWSControlTowerStackSetRolePolicy",
+      "resource_type": "iam:policy",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 02:32:07+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/service-role/AWSControlTowerStackSetRole",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:38:59+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/cloudauditor-lambda-role-dev",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:54:18+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group-rule/sgr-0045ab50bfa951344",
+      "resource_type": "ec2:security-group-rule",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:45+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group/sg-0fa41eed3a49467e1",
+      "resource_type": "ec2:security-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-29 00:20:03+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group/sg-0c9ba5964d28f8ba2",
+      "resource_type": "ec2:security-group",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-aurora-sg-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "AuroraSecurityGroup"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:39+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-interface/eni-0c35ab87aa17b507b",
+      "resource_type": "ec2:network-interface",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:23:40+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:memorydb:us-east-1:286861024884:acl/open-access",
+      "resource_type": "memorydb:acl",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 13:07:37+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:sns:us-east-1:286861024884:cloudauditor-topic-dev",
+      "resource_type": "sns:topic",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "AuditorTopic"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:52:32+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:rds:us-east-1:286861024884:cluster-pg:default.aurora-postgresql15",
+      "resource_type": "rds:cluster-pg",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:51+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:athena:us-east-1:286861024884:workgroup/primary",
+      "resource_type": "athena:workgroup",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 22:13:15+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-02fee11506951dc87",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-28 11:51:26+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:security-group-rule/sgr-06e6b9cafa585cd4d",
+      "resource_type": "ec2:security-group-rule",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-30 04:05:19+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-interface/eni-0a7b62bcaa65b99e2",
+      "resource_type": "ec2:network-interface",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:52+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:lambda:us-east-1:286861024884:function:cloudauditor-discovery-dev",
+      "resource_type": "lambda:function",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "lambda:createdBy",
+            "Value": "SAM"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ResourceDiscoveryFunction"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:26:54+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:dhcp-options/dopt-0cfc91be47283d869",
+      "resource_type": "ec2:dhcp-options",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:19+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:route-table/rtb-0062c704ea2117ea2",
+      "resource_type": "ec2:route-table",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:19+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/aws-service-role/organizations.amazonaws.com/AWSServiceRoleForOrganizations",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:38:59+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:network-interface/eni-009394a89f38ae122",
+      "resource_type": "ec2:network-interface",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:23:40+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:secretsmanager:us-east-1:286861024884:secret:cloudauditor-db-credentials-dev-7qiPAf",
+      "resource_type": "secretsmanager:secret",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-db-secret-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "DatabaseSecret"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:51:25+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/service-role/AWSControlTowerConfigAggregatorRoleForOrganizations",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:38:58+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:lambda:us-east-1:286861024884:function:cloudauditor-manager-dev",
+      "resource_type": "lambda:function",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "lambda:createdBy",
+            "Value": "SAM"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "ManagerFunction"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-02-01 00:26:55+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/aws-service-role/support.amazonaws.com/AWSServiceRoleForSupport",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 15:39:00+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:subnet/subnet-0fd8d6eb27816b5d4",
+      "resource_type": "ec2:subnet",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {
+        "tags": [
+          {
+            "Key": "Name",
+            "Value": "cloudauditor-public-subnet-1-dev"
+          },
+          {
+            "Key": "aws:cloudformation:stack-name",
+            "Value": "cloudauditor-dev"
+          },
+          {
+            "Key": "aws:cloudformation:logical-id",
+            "Value": "PublicSubnet1"
+          },
+          {
+            "Key": "aws:cloudformation:stack-id",
+            "Value": "arn:aws:cloudformation:us-east-1:286861024884:stack/cloudauditor-dev/90ac4550-feff-11f0-9051-0ef220861037"
+          }
+        ]
+      },
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:50:36+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ec2:us-east-1:286861024884:vpc/vpc-0390df7026d90b611",
+      "resource_type": "ec2:vpc",
+      "region": "us-east-1",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-11 21:02:44+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:iam::286861024884:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+      "resource_type": "iam:role",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-31 23:54:18+00:00",
+      "discovery_source": "resource_explorer"
+    },
+    {
+      "arn": "arn:aws:ce::286861024884:anomalymonitor/46f83e0d-7b62-4bbb-b742-a3a429b654d6",
+      "resource_type": "ce:anomalymonitor",
+      "region": "",
+      "account_id": "286861024884",
+      "name": null,
+      "tags": {},
+      "configuration": {},
+      "relationships": [],
+      "created_at": null,
+      "last_modified": "2026-01-09 13:17:48+00:00",
+      "discovery_source": "resource_explorer"
+    }
+  ]
+}

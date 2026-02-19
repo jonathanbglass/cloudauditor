@@ -44,6 +44,19 @@ class ExcelGenerator:
             logger.warning("No resources found to report.")
             return ""
 
+        # Strip timezone info from datetime columns (Excel doesn't support tz-aware datetimes)
+        for col in df.columns:
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                df[col] = df[col].dt.tz_localize(None) if df[col].dt.tz is not None else df[col]
+            else:
+                # Handle object columns that may contain mixed datetime objects
+                try:
+                    converted = pd.to_datetime(df[col], errors='coerce', utc=True)
+                    if converted.notna().any():
+                        df[col] = converted.dt.tz_localize(None)
+                except (ValueError, TypeError):
+                    pass
+
         # Create the Excel writer
         with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
             

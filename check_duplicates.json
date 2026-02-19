@@ -1,0 +1,3 @@
+{
+    "query": "SELECT resource_type, region, COUNT(*) as count FROM resources WHERE resource_type LIKE 'AWS::IAM::%' GROUP BY resource_type, region ORDER BY resource_type, region"
+}

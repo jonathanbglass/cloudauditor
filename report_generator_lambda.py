@@ -23,7 +23,7 @@ def get_secret(secret_arn, region):
     response = client.get_secret_value(SecretId=secret_arn)
     return json.loads(response['SecretString'])
 
-def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest_only=True):
+def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest_only=True, account_ids=None):
     """Fetch resources from the database
     
     Args:
@@ -32,6 +32,7 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest
         db_user: Database user
         db_password: Database password
         latest_only: If True, only fetch resources from the latest discovery run
+        account_ids: Optional list of account IDs to filter by
     """
     logger.info(f"Connecting to database: {db_host}")
     
@@ -43,13 +44,29 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest
         password=db_password
     )
     
+    # Build account filter clause
+    params = []
+    account_filter = ""
+    if account_ids:
+        placeholders = ", ".join(["%s"] * len(account_ids))
+        account_filter = f"AND r.account_id IN ({placeholders})"
+        params = list(account_ids)
+        logger.info(f"Filtering by {len(account_ids)} accounts: {account_ids}")
+
     if latest_only:
-        # Get resources from the latest discovery run(s) - all resources inserted today
-        # This captures all resources from today's discovery runs, even if there are multiple runs
-        query = """
+        # When filtering by accounts, scope the latest_date to those accounts too
+        cte_filter = ""
+        if account_ids:
+            cte_placeholders = ", ".join(["%s"] * len(account_ids))
+            cte_filter = f"WHERE account_id IN ({cte_placeholders})"
+            # Double the params: first set for CTE, second set for main WHERE
+            params = list(account_ids) + list(account_ids)
+
+        query = f"""
             WITH latest_date AS (
                 SELECT DATE(MAX(inserted_at)) as max_date
                 FROM resources
+                {cte_filter}
             )
             SELECT 
                 r.resource_id,
@@ -65,30 +82,32 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest
                 r.inserted_at
             FROM resources r, latest_date
             WHERE DATE(r.inserted_at) = latest_date.max_date
+            {account_filter}
             ORDER BY r.account_id, r.region, r.resource_type, r.resource_id
         """
     else:
-        # Get all resources
-        query = """
+        where_clause = f"WHERE r.account_id IN ({', '.join(['%s'] * len(account_ids))})" if account_ids else ""
+        query = f"""
             SELECT 
-                resource_id,
-                resource_type,
-                resource_arn,
-                region,
-                account_id,
-                name,
-                tags,
-                properties,
-                discovered_at,
-                last_seen_at,
-                inserted_at
-            FROM resources
-            ORDER BY account_id, region, resource_type, resource_id
+                r.resource_id,
+                r.resource_type,
+                r.resource_arn,
+                r.region,
+                r.account_id,
+                r.name,
+                r.tags,
+                r.properties,
+                r.discovered_at,
+                r.last_seen_at,
+                r.inserted_at
+            FROM resources r
+            {where_clause}
+            ORDER BY r.account_id, r.region, r.resource_type, r.resource_id
         """
     
     resources = []
     with conn.cursor() as cur:
-        cur.execute(query)
+        cur.execute(query, params if params else None)
         rows = cur.fetchall()
         
         for row in rows:
@@ -202,9 +221,15 @@ def upload_to_s3(file_content, bucket_name, file_key):
     )
     
     # Generate presigned URL (valid for 15 minutes to avoid clock skew issues)
+    # Include Content-Disposition to force browser download with proper filename
+    download_name = file_key.split('/')[-1]  # e.g. "CloudAuditor_Report_20260218_223652.xlsx"
     url = s3.generate_presigned_url(
         'get_object',
-        Params={'Bucket': bucket_name, 'Key': file_key},
+        Params={
+            'Bucket': bucket_name,
+            'Key': file_key,
+            'ResponseContentDisposition': f'attachment; filename="{download_name}"',
+        },
         ExpiresIn=900  # 15 minutes
     )
     
@@ -229,8 +254,10 @@ def lambda_handler(event, context):
         db_user = secret['username']
         db_password = secret['password']
         
-        # Fetch resources from database
-        resources = fetch_resources_from_database(db_host, db_name, db_user, db_password)
+        # Fetch resources from database (optionally scoped to specific accounts)
+        account_ids = event.get('account_ids')
+        resources = fetch_resources_from_database(db_host, db_name, db_user, db_password,
+                                                  account_ids=account_ids)
         
         if not resources:
             return {

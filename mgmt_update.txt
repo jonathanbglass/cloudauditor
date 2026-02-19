@@ -1,0 +1,4 @@
+﻿{
+    "StackId": "arn:aws:cloudformation:us-east-1:399078540411:stack/CloudAuditorSpokeRole/c6941510-0d34-11f1-89c9-126baba50a1d",
+    "OperationId": "61908cdc-ea69-4d1f-a768-48b4c05904ba"
+}

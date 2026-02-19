@@ -1,0 +1,144 @@
+﻿.\venv\Scripts\python.exe : 2026-02-18 20:38:49,047 - CloudAuditor-CLI - INFO - 
+Initializing Discovery Engine...
+At line:1 char:38
++ ... MMBAAdmin"; .\venv\Scripts\python.exe main.py --accounts 399078540411 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-02-18 20:3...overy Engine    
+...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-02-18 20:38:49,054 - botocore.credentials - INFO - Found credentials in 
+shared credentials file: ~/.aws/credentials
+2026-02-18 20:38:49,145 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in us-east-1
+2026-02-18 20:38:49,727 - resource_discovery.resource_explorer_client - INFO - 
+Resource Explorer index type: LOCAL
+2026-02-18 20:38:49,727 - resource_discovery.discovery_engine - INFO - Resource 
+Explorer LOCAL index detected - will query regions individually
+2026-02-18 20:38:49,733 - resource_discovery.config_client - INFO - Initialized 
+Config client in us-east-1
+2026-02-18 20:38:50,252 - resource_discovery.config_client - WARNING - No Config 
+recorders found
+2026-02-18 20:38:50,252 - resource_discovery.discovery_engine - WARNING - AWS 
+Config not enabled, disabling
+2026-02-18 20:38:50,287 - resource_discovery.discovery_engine - WARNING - Failed 
+to enumerate regions, using default: You must specify a region.
+2026-02-18 20:38:50,287 - resource_discovery.discovery_engine - INFO - Discovery 
+engine initialized with: ResourceExplorer=True, Config=False, CloudControl=False, 
+Aggregator=False, Regions=8
+2026-02-18 20:38:50,287 - CloudAuditor-CLI - INFO - Starting Resource Discovery 
+(this may take a few minutes)...
+2026-02-18 20:38:50,287 - resource_discovery.discovery_engine - INFO - --- 
+Starting discovery for account: 399078540411 ---
+2026-02-18 20:38:50,795 - resource_discovery.discovery_engine - INFO - Attempting 
+discovery via Resource Explorer...
+2026-02-18 20:38:50,795 - resource_discovery.discovery_engine - INFO - Using LOCAL 
+index - querying 8 regions individually
+2026-02-18 20:38:50,795 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in us-east-1...
+2026-02-18 20:38:50,797 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in us-east-1
+2026-02-18 20:38:51,267 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:51,406 - resource_discovery.resource_explorer_client - INFO - 
+Found 44 total resources
+2026-02-18 20:38:51,406 - resource_discovery.discovery_engine - INFO - Found 32 
+resources in us-east-1
+2026-02-18 20:38:51,406 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in us-east-2...
+2026-02-18 20:38:51,408 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in us-east-2
+2026-02-18 20:38:52,051 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:52,187 - resource_discovery.resource_explorer_client - INFO - 
+Found 8 total resources
+2026-02-18 20:38:52,187 - resource_discovery.discovery_engine - INFO - Found 8 
+resources in us-east-2
+2026-02-18 20:38:52,187 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in us-west-1...
+2026-02-18 20:38:52,188 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in us-west-1
+2026-02-18 20:38:52,991 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:53,169 - resource_discovery.resource_explorer_client - INFO - 
+Found 7 total resources
+2026-02-18 20:38:53,170 - resource_discovery.discovery_engine - INFO - Found 7 
+resources in us-west-1
+2026-02-18 20:38:53,170 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in us-west-2...
+2026-02-18 20:38:53,172 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in us-west-2
+2026-02-18 20:38:53,939 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:54,115 - resource_discovery.resource_explorer_client - INFO - 
+Found 9 total resources
+2026-02-18 20:38:54,115 - resource_discovery.discovery_engine - INFO - Found 9 
+resources in us-west-2
+2026-02-18 20:38:54,115 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in eu-west-1...
+2026-02-18 20:38:54,117 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in eu-west-1
+2026-02-18 20:38:55,072 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:55,300 - resource_discovery.resource_explorer_client - INFO - 
+Found 8 total resources
+2026-02-18 20:38:55,300 - resource_discovery.discovery_engine - INFO - Found 8 
+resources in eu-west-1
+2026-02-18 20:38:55,300 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in eu-central-1...
+2026-02-18 20:38:55,302 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in eu-central-1
+2026-02-18 20:38:56,347 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:56,559 - resource_discovery.resource_explorer_client - INFO - 
+Found 8 total resources
+2026-02-18 20:38:56,560 - resource_discovery.discovery_engine - INFO - Found 8 
+resources in eu-central-1
+2026-02-18 20:38:56,560 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in ap-southeast-1...
+2026-02-18 20:38:56,561 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in ap-southeast-1
+2026-02-18 20:38:58,397 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:38:58,740 - resource_discovery.resource_explorer_client - INFO - 
+Found 8 total resources
+2026-02-18 20:38:58,740 - resource_discovery.discovery_engine - INFO - Found 8 
+resources in ap-southeast-1
+2026-02-18 20:38:58,740 - resource_discovery.discovery_engine - INFO - Discovering 
+resources in ap-northeast-1...
+2026-02-18 20:38:58,742 - resource_discovery.resource_explorer_client - INFO - 
+Initialized Resource Explorer client in ap-northeast-1
+2026-02-18 20:38:59,980 - resource_discovery.resource_explorer_client - INFO - 
+Searching resources with query: *
+2026-02-18 20:39:00,284 - resource_discovery.resource_explorer_client - INFO - 
+Found 8 total resources
+2026-02-18 20:39:00,284 - resource_discovery.discovery_engine - INFO - Found 8 
+resources in ap-northeast-1
+2026-02-18 20:39:00,284 - resource_discovery.discovery_engine - INFO - 
+Multi-region discovery complete: 97 total resources
+2026-02-18 20:39:00,285 - resource_discovery.discovery_engine - INFO - Resource 
+Explorer found 97 resources
+2026-02-18 20:39:00,285 - resource_discovery.discovery_engine - INFO - Discovery 
+complete: 97 resources in 9.49 seconds
+2026-02-18 20:39:00,286 - CloudAuditor-CLI - INFO - Discovered 97 resources across 
+1 accounts.
+2026-02-18 20:39:00,286 - CloudAuditor-CLI - INFO - Generating Excel Report...
+C:\Users\jonat\GitHub\cloudauditor\reporting\excel_generator.py:54: UserWarning: 
+Could not infer format, so each element will be parsed individually, falling back 
+to `dateutil`. To ensure parsing is consistent and as-expected, please specify a 
+format.
+  converted = pd.to_datetime(df[col], errors='coerce', utc=True)
+C:\Users\jonat\GitHub\cloudauditor\reporting\excel_generator.py:54: UserWarning: 
+Could not infer format, so each element will be parsed individually, falling back 
+to `dateutil`. To ensure parsing is consistent and as-expected, please specify a 
+format.
+  converted = pd.to_datetime(df[col], errors='coerce', utc=True)
+C:\Users\jonat\GitHub\cloudauditor\reporting\excel_generator.py:54: UserWarning: 
+Could not infer format, so each element will be parsed individually, falling back 
+to `dateutil`. To ensure parsing is consistent and as-expected, please specify a 
+format.
+  converted = pd.to_datetime(df[col], errors='coerce', utc=True)
+2026-02-18 20:39:00,646 - reporting.excel_generator - INFO - Report generated 
+successfully: reports\CloudAuditor_Report_20260218_203900.xlsx
+2026-02-18 20:39:00,646 - CloudAuditor-CLI - INFO - Excel report generated: 
+reports\CloudAuditor_Report_20260218_203900.xlsx

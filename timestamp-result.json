@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"success\": true, \"report_type\": \"summary\", \"results\": {\"query\": \"SELECT COUNT(*) as total_resources, COUNT(DISTINCT inserted_at) as distinct_timestamps, MAX(inserted_at) as latest_timestamp FROM resources\", \"rows\": [[563, 21, \"2026-02-02 16:25:07.708724+00:00\"]], \"row_count\": 1}}"}

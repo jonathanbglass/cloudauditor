@@ -1,0 +1,10 @@
+﻿aws : 
+At line:1 char:1
++ aws cloudformation create-stack-set --stack-set-name CloudAuditorSpok ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+An error occurred (ValidationError) when calling the CreateStackSet 
+operation: You must enable organizations access to operate a service 
+managed stack set

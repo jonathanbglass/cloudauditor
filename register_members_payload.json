@@ -1,0 +1,3 @@
+{
+    "query": "INSERT INTO monitored_accounts (account_id, role_arn, account_name, status, auto_discovered) VALUES ('633605692871', 'arn:aws:iam::633605692871:role/CloudAuditorExecutionRole', 'FleetMarshalDemoLogging', 'pending', FALSE), ('000277563702', 'arn:aws:iam::000277563702:role/CloudAuditorExecutionRole', 'FleetMarshalDemoSandbox', 'pending', FALSE) ON CONFLICT (account_id) DO UPDATE SET status = 'pending', account_name = EXCLUDED.account_name"
+}
