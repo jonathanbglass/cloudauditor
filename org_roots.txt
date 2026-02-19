@@ -1,0 +1,15 @@
+﻿{
+    "Roots": [
+        {
+            "Id": "r-zhe1",
+            "Arn": "arn:aws:organizations::399078540411:root/o-2w5ygwu1fi/r-zhe1",
+            "Name": "Root",
+            "PolicyTypes": [
+                {
+                    "Type": "SERVICE_CONTROL_POLICY",
+                    "Status": "ENABLED"
+                }
+            ]
+        }
+    ]
+}

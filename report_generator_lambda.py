@@ -54,10 +54,19 @@ def fetch_resources_from_database(db_host, db_name, db_user, db_password, latest
         logger.info(f"Filtering by {len(account_ids)} accounts: {account_ids}")
 
     if latest_only:
+        # When filtering by accounts, scope the latest_date to those accounts too
+        cte_filter = ""
+        if account_ids:
+            cte_placeholders = ", ".join(["%s"] * len(account_ids))
+            cte_filter = f"WHERE account_id IN ({cte_placeholders})"
+            # Double the params: first set for CTE, second set for main WHERE
+            params = list(account_ids) + list(account_ids)
+
         query = f"""
             WITH latest_date AS (
                 SELECT DATE(MAX(inserted_at)) as max_date
                 FROM resources
+                {cte_filter}
             )
             SELECT 
                 r.resource_id,

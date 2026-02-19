@@ -1,0 +1,10 @@
+﻿aws : 
+At line:1 char:1
++ aws organizations enable-aws-service-access --service-principal stack ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+An error occurred (InvalidInputException) when calling the 
+EnableAWSServiceAccess operation: You specified an unrecognized service 
+principal.

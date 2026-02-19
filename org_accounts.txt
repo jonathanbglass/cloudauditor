@@ -1,0 +1,34 @@
+﻿{
+    "Accounts": [
+        {
+            "Id": "633605692871",
+            "Arn": "arn:aws:organizations::399078540411:account/o-2w5ygwu1fi/633605692871",
+            "Email": "fmsupport+logging@fleetmarshal.cloud",
+            "Name": "FleetMarshalDemoLogging",
+            "Status": "ACTIVE",
+            "State": "ACTIVE",
+            "JoinedMethod": "CREATED",
+            "JoinedTimestamp": "2026-02-14T19:46:36.829000-05:00"
+        },
+        {
+            "Id": "000277563702",
+            "Arn": "arn:aws:organizations::399078540411:account/o-2w5ygwu1fi/000277563702",
+            "Email": "fmsupport+sandbox@fleetmarshal.cloud",
+            "Name": "FleetMarshalDemoSandbox",
+            "Status": "ACTIVE",
+            "State": "ACTIVE",
+            "JoinedMethod": "CREATED",
+            "JoinedTimestamp": "2026-02-14T19:46:06.615000-05:00"
+        },
+        {
+            "Id": "399078540411",
+            "Arn": "arn:aws:organizations::399078540411:account/o-2w5ygwu1fi/399078540411",
+            "Email": "fmsupport@fleetmarshal.cloud",
+            "Name": "FleetMarshalDemoMBA",
+            "Status": "ACTIVE",
+            "State": "ACTIVE",
+            "JoinedMethod": "INVITED",
+            "JoinedTimestamp": "2026-02-14T19:44:36.373000-05:00"
+        }
+    ]
+}
