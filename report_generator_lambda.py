@@ -202,9 +202,15 @@ def upload_to_s3(file_content, bucket_name, file_key):
     )
     
     # Generate presigned URL (valid for 15 minutes to avoid clock skew issues)
+    # Include Content-Disposition to force browser download with proper filename
+    download_name = file_key.split('/')[-1]  # e.g. "CloudAuditor_Report_20260218_223652.xlsx"
     url = s3.generate_presigned_url(
         'get_object',
-        Params={'Bucket': bucket_name, 'Key': file_key},
+        Params={
+            'Bucket': bucket_name,
+            'Key': file_key,
+            'ResponseContentDisposition': f'attachment; filename="{download_name}"',
+        },
         ExpiresIn=900  # 15 minutes
     )
     
