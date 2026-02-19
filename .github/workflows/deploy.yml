@@ -102,7 +102,7 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
       - name: Upload packaged template
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: packaged-template-${{ matrix.environment }}
           path: packaged.yaml
@@ -153,7 +153,7 @@ jobs:
           cat stack-outputs.json
 
       - name: Upload stack outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stack-outputs-${{ matrix.environment }}
           path: stack-outputs.json
