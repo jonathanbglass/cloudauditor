@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Creates a LOCAL AWS Resource Explorer index in the deployed region.
+  Deploy as a StackSet to your Organization Root OU to enable resource 
+  discovery across all current and future member accounts.
+  Required by CloudAuditor and FleetMarshal for cross-account inventory.
+
+Resources:
+  ResourceExplorerIndex:
+    Type: AWS::ResourceExplorer2::Index
+    Properties:
+      Type: LOCAL
+
+Outputs:
+  IndexArn:
+    Description: ARN of the created Resource Explorer index
+    Value: !GetAtt ResourceExplorerIndex.Arn
+  IndexRegion:
+    Description: Region where the index was created
+    Value: !Ref AWS::Region
