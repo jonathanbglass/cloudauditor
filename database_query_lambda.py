@@ -43,36 +43,55 @@ def lambda_handler(event, context):
         
         elif report_type == 'summary':
             with conn.cursor() as cur:
-                # Build account filter
-                acct_where = ""
-                acct_params = []
+                # Build latest-only CTE + account filter (matches report generator logic)
+                cte_filter = ""
+                cte_params = []
                 if account_ids:
                     placeholders = ", ".join(["%s"] * len(account_ids))
-                    acct_where = f"WHERE account_id IN ({placeholders})"
-                    acct_params = list(account_ids)
+                    cte_filter = f"WHERE account_id IN ({placeholders})"
+                    cte_params = list(account_ids)
                     logger.info(f"Summary filtered by {len(account_ids)} accounts")
 
-                # Total resources
-                cur.execute(f"SELECT COUNT(*) FROM resources {acct_where}", acct_params or None)
+                latest_cte = f"""
+                    WITH latest_date AS (
+                        SELECT DATE(MAX(inserted_at)) as max_date
+                        FROM resources {cte_filter}
+                    )
+                """
+                latest_where = "DATE(inserted_at) = (SELECT max_date FROM latest_date)"
+                if account_ids:
+                    acct_where = f"{latest_where} AND account_id IN ({placeholders})"
+                    # params: CTE filter + main WHERE filter
+                    query_params = cte_params + list(account_ids)
+                else:
+                    acct_where = latest_where
+                    query_params = []
+
+                # Total resources (latest run only)
+                cur.execute(f"{latest_cte} SELECT COUNT(*) FROM resources WHERE {acct_where}",
+                            query_params or None)
                 total_resources = cur.fetchone()[0]
                 
-                # Unique resource types
-                cur.execute(f"SELECT COUNT(DISTINCT resource_type) FROM resources {acct_where}", acct_params or None)
+                # Unique resource types (latest run only)
+                cur.execute(f"{latest_cte} SELECT COUNT(DISTINCT resource_type) FROM resources WHERE {acct_where}",
+                            query_params or None)
                 unique_types = cur.fetchone()[0]
                 
-                # Unique accounts
-                cur.execute(f"SELECT COUNT(DISTINCT account_id) FROM resources {acct_where}", acct_params or None)
+                # Unique accounts (latest run only)
+                cur.execute(f"{latest_cte} SELECT COUNT(DISTINCT account_id) FROM resources WHERE {acct_where}",
+                            query_params or None)
                 unique_accounts = cur.fetchone()[0]
                 
                 # Monitored accounts (scoped if account_ids provided)
                 if account_ids:
-                    cur.execute(f"SELECT COUNT(*) FROM monitored_accounts WHERE account_id IN ({placeholders})", acct_params)
+                    cur.execute(f"SELECT COUNT(*) FROM monitored_accounts WHERE account_id IN ({placeholders})", cte_params)
                 else:
                     cur.execute("SELECT COUNT(*) FROM monitored_accounts")
                 monitored = cur.fetchone()[0]
                 
                 # Latest scan
-                cur.execute(f"SELECT MAX(discovered_at) FROM resources {acct_where}", acct_params or None)
+                cur.execute(f"{latest_cte} SELECT MAX(discovered_at) FROM resources WHERE {acct_where}",
+                            query_params or None)
                 latest_scan = cur.fetchone()[0]
                 
                 results = {
@@ -107,21 +126,37 @@ def lambda_handler(event, context):
         
         elif report_type == 'by_type':
             with conn.cursor() as cur:
-                acct_where = ""
-                acct_params = []
+                # Build latest-only CTE + account filter (matches report generator logic)
+                cte_filter = ""
+                cte_params = []
                 if account_ids:
                     placeholders = ", ".join(["%s"] * len(account_ids))
-                    acct_where = f"WHERE account_id IN ({placeholders})"
-                    acct_params = list(account_ids)
+                    cte_filter = f"WHERE account_id IN ({placeholders})"
+                    cte_params = list(account_ids)
+
+                latest_cte = f"""
+                    WITH latest_date AS (
+                        SELECT DATE(MAX(inserted_at)) as max_date
+                        FROM resources {cte_filter}
+                    )
+                """
+                latest_where = "DATE(inserted_at) = (SELECT max_date FROM latest_date)"
+                if account_ids:
+                    acct_where = f"{latest_where} AND account_id IN ({placeholders})"
+                    query_params = cte_params + list(account_ids) + [limit]
+                else:
+                    acct_where = latest_where
+                    query_params = [limit]
 
                 cur.execute(f"""
+                    {latest_cte}
                     SELECT resource_type, COUNT(*) as count
                     FROM resources
-                    {acct_where}
+                    WHERE {acct_where}
                     GROUP BY resource_type
                     ORDER BY count DESC
                     LIMIT %s
-                """, acct_params + [limit])
+                """, query_params)
                 
                 resource_types = []
                 for row in cur.fetchall():

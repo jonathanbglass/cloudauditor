@@ -5,6 +5,7 @@ Triggered by CloudWatch Events (scheduled)
 import json
 import logging
 import os
+import uuid
 from typing import Dict, Any
 
 import boto3
@@ -31,10 +32,19 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info("Starting resource discovery")
     logger.info(f"Event: {json.dumps(event)}")
     
+    run_id = str(uuid.uuid4())
+    db = None
+    
     try:
         # Initialize clients
         db = DatabaseClient()
         org_client = OrganizationsClient()
+        
+        # Record run start
+        try:
+            db.start_discovery_run(run_id)
+        except Exception as run_err:
+            logger.warning(f"Failed to record run start: {run_err}")
         
         # 1. Check if this is an Organization Management account
         try:
@@ -132,6 +142,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         summary = engine.get_resource_summary(result)
         
+        # Record run completion
+        try:
+            db.complete_discovery_run(
+                run_id, 'completed', result.total_count,
+                len(summary), result.duration_seconds, result.errors or []
+            )
+        except Exception as run_err:
+            logger.warning(f"Failed to record run completion: {run_err}")
+        
         return {
             'statusCode': 200,
             'body': json.dumps({
@@ -145,6 +164,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
     except Exception as e:
         logger.exception("Resource discovery failed")
+        # Record run failure
+        if db:
+            try:
+                db.complete_discovery_run(run_id, 'failed', 0, 0, 0, [str(e)])
+            except Exception as run_err:
+                logger.warning(f"Failed to record run failure: {run_err}")
         return {
             'statusCode': 500,
             'body': json.dumps({

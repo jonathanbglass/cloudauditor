@@ -105,3 +105,26 @@ class DatabaseClient:
                     region, r['account_id'], r.get('name'), 
                     json.dumps(r.get('tags', {})), json.dumps(r.get('properties', {}))
                 ))
+
+    def start_discovery_run(self, run_id: str) -> None:
+        """Record a discovery run starting."""
+        conn = self._get_connection()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO discovery_runs (run_id, started_at, status)
+                VALUES (%s, NOW(), 'running')
+            """, (run_id,))
+
+    def complete_discovery_run(self, run_id: str, status: str,
+                                total_resources: int, resource_types: int,
+                                duration_seconds: float, errors: list) -> None:
+        """Record a discovery run completing."""
+        conn = self._get_connection()
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE discovery_runs 
+                SET completed_at = NOW(), status = %s, total_resources = %s,
+                    resource_types = %s, duration_seconds = %s, errors = %s::jsonb
+                WHERE run_id = %s
+            """, (status, total_resources, resource_types,
+                  duration_seconds, json.dumps(errors), run_id))
