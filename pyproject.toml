@@ -1,0 +1,38 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--cov=resource_discovery",
+    "--cov=lib",
+    "--cov=reporting",
+    "--cov-report=term-missing",
+    "--cov-report=html:reports/coverage",
+]
+markers = [
+    "unit: Pure unit tests with no external dependencies",
+    "integration: Tests requiring mocked AWS services (moto)",
+    "slow: Long-running tests",
+]
+
+[tool.coverage.run]
+source = ["resource_discovery", "lib", "reporting"]
+omit = [
+    "tests/*",
+    "venv/*",
+    ".venv/*",
+    ".aws-sam/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 0
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "pass",
+]
