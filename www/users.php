@@ -22,8 +22,8 @@ foreach ($resarray as $key=>$val) {
    // $resarray[$key]['aud_iam_user_json'] . '</span>' . "\n";
   // iterate over columns
   print '      <td>' . sprintf("%'012d\n", $resarray[$key]['aws_account_id'])  . "</td>\n";
-  print '      <td>' . $resarray[$key]['arn']  . "</td>\n";
-  print '      <td>' . $resarray[$key]['username']  . "</td>\n";
+  print '      <td>' . htmlspecialchars($resarray[$key]['arn'])  . "</td>\n";
+  print '      <td>' . htmlspecialchars($resarray[$key]['username'])  . "</td>\n";
   $thisdate = explode(" ", $resarray[$key]['createdate']);
   print '      <td>' . $thisdate[0] . "</td>\n";
   $thisdate = explode(" ", $resarray[$key]['passwordlastused']);

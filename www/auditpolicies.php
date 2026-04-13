@@ -166,8 +166,8 @@ $resarray = pg_fetch_all($res);
 foreach ($resarray as $key=>$val) {
   print '    <tr>' . "\n";
   print '      <td>' . sprintf("%'012d\n", $resarray[$key]['aws_account_id'])  . "</td>\n";
-  print '      <td>' . $resarray[$key]['arn']  . "</td>\n";
-  print '      <td>' . $resarray[$key]['username']  . "</td>\n";
+  print '      <td>' . htmlspecialchars($resarray[$key]['arn'])  . "</td>\n";
+  print '      <td>' . htmlspecialchars($resarray[$key]['username'])  . "</td>\n";
   print '      <td>' . $resarray[$key]['passwordlastused']  . "</td>\n";
   print '      <td>' . $resarray[$key]['insert_ts']  . "</td>\n";
   print "    </tr>\n";

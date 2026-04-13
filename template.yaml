@@ -438,14 +438,14 @@ Resources:
                   - cloudcontrol:GetResource
                 Resource: '*'
               
-              # Cross-account access
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - sts:AssumeRole
-                  - sts:GetCallerIdentity
-                Resource: 
-                  - '*'
-                  - 'arn:aws:iam::*:role/CloudAuditorExecutionRole'
+                Resource: 'arn:aws:iam::*:role/CloudAuditorExecutionRole'
               
               # Secrets Manager access for database credentials
               - Effect: Allow
