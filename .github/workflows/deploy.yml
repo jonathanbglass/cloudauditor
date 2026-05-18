@@ -135,7 +135,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Download packaged template
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: packaged-template-${{ matrix.environment }}
 
