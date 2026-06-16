@@ -27,7 +27,8 @@ function authenticate($user, $password) {
 	if($bind = @ldap_bind($ldap, $user.$ldap_usr_dom, $password)) {
 		// valid
 		// check presence in groups
-		$filter = "(sAMAccountName=".$user.")";
+		$escaped_user = ldap_escape($user, "", LDAP_ESCAPE_FILTER);
+		$filter = "(sAMAccountName=".$escaped_user.")";
 		$attr = array("memberof");
 		$result = ldap_search($ldap, $ldap_dn, $filter, $attr) or exit("Unable to search LDAP server");
 		$entries = ldap_get_entries($ldap, $result);

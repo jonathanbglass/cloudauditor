@@ -8,6 +8,7 @@ from typing import List, Optional, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
+from botocore.exceptions import ClientError
 
 from .models import Resource, DiscoveryConfig, DiscoveryResult, DiscoverySource
 from .resource_explorer_client import ResourceExplorerClient
@@ -267,6 +268,18 @@ class ResourceDiscoveryEngine:
                 logger.error(error_msg)
                 result.add_error(error_msg)
         
+        # Always attempt custom Bedrock detection to enrich resources
+        try:
+            logger.info("Attempting custom Bedrock discovery...")
+            bedrock_resources = self._discover_bedrock_resources(account_id)
+            existing_arns = {r.arn for r in result.resources}
+            new_bedrock_resources = [r for r in bedrock_resources if r.arn not in existing_arns]
+            result.resources.extend(new_bedrock_resources)
+            logger.info(f"Custom Bedrock discovery found {len(bedrock_resources)} resources ({len(new_bedrock_resources)} new)")
+        except Exception as e:
+            logger.error(f"Failed to run custom Bedrock discovery: {e}")
+            result.add_error(f"Custom Bedrock discovery failed: {str(e)}")
+
         # Filter by resource types if configured
         if self.config.include_types or self.config.exclude_types:
             original_count = len(result.resources)
@@ -475,3 +488,129 @@ class ResourceDiscoveryEngine:
             summary[resource_type] = summary.get(resource_type, 0) + 1
         
         return dict(sorted(summary.items(), key=lambda x: x[1], reverse=True))
+
+    def _discover_bedrock_resources(self, account_id: str) -> List[Resource]:
+        """Discover Amazon Bedrock resources and custom compliance configurations"""
+        resources = []
+        
+        session_region = self.session.region_name
+        if not isinstance(session_region, str):
+            session_region = 'us-east-1'
+        regions_to_check = self.config.regions or [session_region]
+        
+        for region in regions_to_check:
+            try:
+                bedrock_client = self.session.client('bedrock', region_name=region)
+                
+                # 1. Model Invocation Logging Configuration
+                try:
+                    log_resp = bedrock_client.get_model_invocation_logging_configuration()
+                    log_config = log_resp.get('loggingConfig')
+                    if log_config:
+                        resources.append(Resource(
+                            arn=f"arn:aws:bedrock:{region}:{account_id}:logging-configuration/default",
+                            resource_type="AWS::Bedrock::ModelInvocationLogging",
+                            region=region,
+                            account_id=account_id,
+                            name="BedrockModelInvocationLogging",
+                            tags={},
+                            configuration=log_config,
+                            source=DiscoverySource.CLOUD_CONTROL,
+                            relationships=[]
+                        ))
+                except ClientError as e:
+                    code = e.response['Error']['Code']
+                    if code != 'AccessDeniedException':
+                        logger.warning(f"Error fetching Bedrock logging configuration in {region}: {e}")
+                
+                # 2. Guardrails
+                try:
+                    guardrails_resp = bedrock_client.list_guardrails()
+                    for g_summary in guardrails_resp.get('guardrailSummaries', []):
+                        g_id = g_summary['id']
+                        g_arn = g_summary['arn']
+                        
+                        try:
+                            g_detail = bedrock_client.get_guardrail(
+                                guardrailIdentifier=g_id,
+                                guardrailVersion=g_summary.get('version', 'DRAFT')
+                            )
+                            config_data = {k: v for k, v in g_detail.items() if k not in ('ResponseMetadata',)}
+                        except Exception as detail_err:
+                            logger.warning(f"Could not get details for guardrail {g_id}: {detail_err}")
+                            config_data = g_summary
+                        
+                        resources.append(Resource(
+                            arn=g_arn,
+                            resource_type="AWS::Bedrock::Guardrail",
+                            region=region,
+                            account_id=account_id,
+                            name=g_summary.get('name'),
+                            tags={},
+                            configuration=config_data,
+                            source=DiscoverySource.CLOUD_CONTROL,
+                            relationships=[],
+                            last_modified=g_summary.get('updatedAt')
+                        ))
+                except ClientError as e:
+                    code = e.response['Error']['Code']
+                    if code != 'AccessDeniedException':
+                        logger.warning(f"Error listing Bedrock guardrails in {region}: {e}")
+                        
+            except Exception as e:
+                logger.warning(f"Could not initialize Bedrock client for region {region}: {e}")
+
+        # 3. AWS Organizations Governance (BEDROCK_POLICY / SCPs)
+        try:
+            org_client = self.session.client('organizations')
+            roots = org_client.list_roots().get('Roots', [])
+            
+            bedrock_policy_enabled = False
+            for root in roots:
+                for p_type in root.get('PolicyTypes', []):
+                    if p_type.get('Type') == 'BEDROCK_POLICY' and p_type.get('Status') == 'ENABLED':
+                        bedrock_policy_enabled = True
+                        break
+            
+            has_bedrock_policy = False
+            policies_list = []
+            if bedrock_policy_enabled:
+                policies_list = org_client.list_policies(Filter='BEDROCK_POLICY').get('Policies', [])
+                if policies_list:
+                    has_bedrock_policy = True
+            
+            has_scp_enforcement = False
+            scps = org_client.list_policies(Filter='SERVICE_CONTROL_POLICY').get('Policies', [])
+            for scp in scps:
+                policy_desc = org_client.describe_policy(PolicyId=scp['Id']).get('Policy', {})
+                content_str = policy_desc.get('Content', '').lower()
+                if 'bedrock:guardrailidentifier' in content_str:
+                    has_scp_enforcement = True
+                    policies_list.append(scp)
+            
+            if has_bedrock_policy or has_scp_enforcement:
+                resources.append(Resource(
+                    arn=f"arn:aws:organizations::{account_id}:governance/bedrock-org-policies",
+                    resource_type="AWS::Bedrock::OrgGovernance",
+                    region="global",
+                    account_id=account_id,
+                    name="BedrockOrganizationGovernance",
+                    tags={},
+                    configuration={
+                        "bedrock_policy_type_enabled": bedrock_policy_enabled,
+                        "bedrock_policies_found": has_bedrock_policy,
+                        "scp_enforcement_found": has_scp_enforcement,
+                        "policies": policies_list
+                    },
+                    source=DiscoverySource.CLOUD_CONTROL,
+                    relationships=[]
+                ))
+        except ClientError as e:
+            code = e.response['Error']['Code']
+            if code not in ('AWSOrganizationsNotInUseException', 'AccessDeniedException'):
+                logger.warning(f"Error checking Organizations policies: {e}")
+        except Exception as e:
+            logger.warning(f"Error checking Organizations governance: {e}")
+
+        return resources
+

@@ -64,3 +64,9 @@ discovered_resources.json
 .aws-sam/
 packaged.yaml
 samconfig.toml.bak
+
+# Test / Coverage
+.coverage
+coverage_report.txt
+reports/coverage/
+htmlcov/
