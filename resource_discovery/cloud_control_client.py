@@ -131,6 +131,8 @@ class CloudControlClient:
             'AWS::ApiGateway::RestApi',
             'AWS::CloudWatch::Alarm',
             'AWS::Events::Rule',
+            'AWS::Bedrock::Guardrail',
+            'AWS::Bedrock::GuardrailVersion',
         ]
     
     def convert_to_resource(

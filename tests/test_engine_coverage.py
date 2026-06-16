@@ -26,6 +26,7 @@ def _make_engine(config=None, **kwargs):
     engine.cloud_control = kwargs.get("cc_client")
     engine.is_aggregator = kwargs.get("is_aggregator", False)
     engine.enabled_regions = kwargs.get("regions", ["us-east-1"])
+    engine._discover_bedrock_resources = MagicMock(return_value=[])
     return engine
 
 

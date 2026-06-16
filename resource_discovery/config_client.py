@@ -185,6 +185,8 @@ class ConfigClient:
             'AWS::CloudFormation::Stack',
             'AWS::SNS::Topic',
             'AWS::SQS::Queue',
+            'AWS::Bedrock::Guardrail',
+            'AWS::Bedrock::GuardrailVersion',
         ]
     
     def convert_to_resource(

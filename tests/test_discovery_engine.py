@@ -41,6 +41,7 @@ def _make_engine(
     engine.cloud_control = MagicMock() if has_cc else None
     engine.is_aggregator = is_aggregator
     engine.enabled_regions = regions or ["us-east-1"]
+    engine._discover_bedrock_resources = MagicMock(return_value=[])
     return engine
 
 
@@ -234,3 +235,158 @@ class TestInitializeRegions:
         # Should fall back to hardcoded defaults
         assert len(engine.enabled_regions) > 0
         assert "us-east-1" in engine.enabled_regions
+
+
+# ===================================================================
+# _discover_bedrock_resources
+# ===================================================================
+
+class TestDiscoverBedrockResources:
+
+    def test_discover_bedrock_resources_logging_enabled(self):
+        engine = _make_engine(regions=["us-east-1"])
+        engine._discover_bedrock_resources = ResourceDiscoveryEngine._discover_bedrock_resources.__get__(engine)
+        
+        bedrock_client = MagicMock()
+        bedrock_client.get_model_invocation_logging_configuration.return_value = {
+            'loggingConfig': {
+                'textDataDeliveryEnabled': True,
+                'cloudWatchConfig': {'logGroupName': 'bedrock-logs'}
+            }
+        }
+        bedrock_client.list_guardrails.return_value = {'guardrailSummaries': []}
+        
+        # Mock session.client
+        def mock_client(service_name, **kwargs):
+            if service_name == 'bedrock':
+                return bedrock_client
+            raise Exception("Mock other client")
+            
+        engine.session.client.side_effect = mock_client
+        
+        resources = engine._discover_bedrock_resources("123456789012")
+        
+        # Should have found 1 resource (logging config)
+        assert len(resources) == 1
+        res = resources[0]
+        assert res.resource_type == "AWS::Bedrock::ModelInvocationLogging"
+        assert res.region == "us-east-1"
+        assert res.account_id == "123456789012"
+        assert res.configuration['textDataDeliveryEnabled'] is True
+
+    def test_discover_bedrock_resources_guardrails_exist(self):
+        engine = _make_engine(regions=["us-east-1"])
+        engine._discover_bedrock_resources = ResourceDiscoveryEngine._discover_bedrock_resources.__get__(engine)
+        
+        bedrock_client = MagicMock()
+        bedrock_client.get_model_invocation_logging_configuration.return_value = {}
+        bedrock_client.list_guardrails.return_value = {
+            'guardrailSummaries': [{
+                'id': 'g-1',
+                'arn': 'arn:aws:bedrock:us-east-1:123456789012:guardrail/g-1',
+                'name': 'MyGuardrail',
+                'version': '1',
+                'updatedAt': None
+            }]
+        }
+        bedrock_client.get_guardrail.return_value = {
+            'name': 'MyGuardrail',
+            'blockedInputMessaging': 'Harmful content blocked',
+            'contentPolicy': {'filters': []}
+        }
+        
+        def mock_client(service_name, **kwargs):
+            if service_name == 'bedrock':
+                return bedrock_client
+            raise Exception("Mock other client")
+            
+        engine.session.client.side_effect = mock_client
+        
+        resources = engine._discover_bedrock_resources("123456789012")
+        
+        # Should have found 1 resource (guardrail)
+        assert len(resources) == 1
+        res = resources[0]
+        assert res.resource_type == "AWS::Bedrock::Guardrail"
+        assert res.arn == "arn:aws:bedrock:us-east-1:123456789012:guardrail/g-1"
+        assert res.name == "MyGuardrail"
+        assert res.configuration['blockedInputMessaging'] == 'Harmful content blocked'
+
+    def test_discover_bedrock_resources_org_governance(self):
+        engine = _make_engine(regions=["us-east-1"])
+        engine._discover_bedrock_resources = ResourceDiscoveryEngine._discover_bedrock_resources.__get__(engine)
+        
+        bedrock_client = MagicMock()
+        bedrock_client.get_model_invocation_logging_configuration.return_value = {}
+        bedrock_client.list_guardrails.return_value = {'guardrailSummaries': []}
+        
+        org_client = MagicMock()
+        org_client.list_roots.return_value = {
+            'Roots': [{
+                'Id': 'r-1',
+                'PolicyTypes': [{'Type': 'BEDROCK_POLICY', 'Status': 'ENABLED'}]
+            }]
+        }
+        org_client.list_policies.side_effect = [
+            {'Policies': [{'Id': 'p-1', 'Name': 'BedrockPolicy'}]}, # BEDROCK_POLICY
+            {'Policies': [{'Id': 'p-scp', 'Name': 'SCP'}]} # SERVICE_CONTROL_POLICY
+        ]
+        org_client.describe_policy.return_value = {
+            'Policy': {
+                'Content': '{"Condition": {"StringEquals": {"bedrock:GuardrailIdentifier": "arn"}}}'
+            }
+        }
+        
+        def mock_client(service_name, **kwargs):
+            if service_name == 'bedrock':
+                return bedrock_client
+            if service_name == 'organizations':
+                return org_client
+            raise Exception("Mock other client")
+            
+        engine.session.client.side_effect = mock_client
+        
+        resources = engine._discover_bedrock_resources("123456789012")
+        
+        # Should have found 1 resource (org governance)
+        assert len(resources) == 1
+        res = resources[0]
+        assert res.resource_type == "AWS::Bedrock::OrgGovernance"
+        assert res.configuration['bedrock_policy_type_enabled'] is True
+        assert res.configuration['bedrock_policies_found'] is True
+        assert res.configuration['scp_enforcement_found'] is True
+
+    def test_discover_bedrock_resources_handles_errors(self):
+        engine = _make_engine(regions=["us-east-1"])
+        engine._discover_bedrock_resources = ResourceDiscoveryEngine._discover_bedrock_resources.__get__(engine)
+        
+        bedrock_client = MagicMock()
+        from botocore.exceptions import ClientError
+        bedrock_client.get_model_invocation_logging_configuration.side_effect = ClientError(
+            {'Error': {'Code': 'AccessDeniedException', 'Message': 'Access Denied'}},
+            'GetModelInvocationLoggingConfiguration'
+        )
+        bedrock_client.list_guardrails.side_effect = ClientError(
+            {'Error': {'Code': 'AccessDeniedException', 'Message': 'Access Denied'}},
+            'ListGuardrails'
+        )
+        
+        org_client = MagicMock()
+        org_client.list_roots.side_effect = ClientError(
+            {'Error': {'Code': 'AccessDeniedException', 'Message': 'Access Denied'}},
+            'ListRoots'
+        )
+        
+        def mock_client(service_name, **kwargs):
+            if service_name == 'bedrock':
+                return bedrock_client
+            if service_name == 'organizations':
+                return org_client
+            raise Exception("Mock other client")
+            
+        engine.session.client.side_effect = mock_client
+        
+        # Should complete without throwing exceptions
+        resources = engine._discover_bedrock_resources("123456789012")
+        assert len(resources) == 0
+
