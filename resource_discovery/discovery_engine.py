@@ -612,5 +612,69 @@ class ResourceDiscoveryEngine:
         except Exception as e:
             logger.warning(f"Error checking Organizations governance: {e}")
 
+        # 4. AWS Organizations AI Services Opt-out Policies
+        try:
+            org_client = self.session.client('organizations')
+            roots = org_client.list_roots().get('Roots', [])
+            
+            ai_opt_out_policy_type_enabled = False
+            for root in roots:
+                for p_type in root.get('PolicyTypes', []):
+                    if p_type.get('Type') == 'AISERVICES_OPT_OUT_POLICY' and p_type.get('Status') == 'ENABLED':
+                        ai_opt_out_policy_type_enabled = True
+                        break
+            
+            if ai_opt_out_policy_type_enabled:
+                policies_list = org_client.list_policies(Filter='AISERVICES_OPT_OUT_POLICY').get('Policies', [])
+                for policy in policies_list:
+                    policy_id = policy['Id']
+                    policy_arn = policy['Arn']
+                    policy_name = policy['Name']
+                    
+                    try:
+                        policy_desc = org_client.describe_policy(PolicyId=policy_id).get('Policy', {})
+                        policy_summary = policy_desc.get('PolicySummary', {})
+                        content_str = policy_desc.get('Content', '{}')
+                    except Exception as e:
+                        logger.warning(f"Error describing AI Opt-out policy {policy_id}: {e}")
+                        policy_summary = {}
+                        content_str = '{}'
+                    
+                    # Check attachments (to root(s))
+                    attachments = []
+                    for root in roots:
+                        root_id = root['Id']
+                        try:
+                            attached_policies = org_client.list_policies_for_target(
+                                TargetId=root_id,
+                                Filter='AISERVICES_OPT_OUT_POLICY'
+                            ).get('Policies', [])
+                            if any(ap['Id'] == policy_id for ap in attached_policies):
+                                attachments.append(root_id)
+                        except Exception as e:
+                            logger.warning(f"Error listing attached policies for target {root_id}: {e}")
+                    
+                    resources.append(Resource(
+                        arn=policy_arn,
+                        resource_type="AWS::Organizations::AIOptOutPolicy",
+                        region="global",
+                        account_id=account_id,
+                        name=policy_name,
+                        tags={},
+                        configuration={
+                            "PolicySummary": policy_summary,
+                            "Content": content_str,
+                            "AttachedToRoots": attachments
+                        },
+                        source=DiscoverySource.CLOUD_CONTROL,
+                        relationships=[]
+                    ))
+        except ClientError as e:
+            code = e.response['Error']['Code']
+            if code not in ('AWSOrganizationsNotInUseException', 'AccessDeniedException'):
+                logger.warning(f"Error checking Organizations AI Opt-out policies: {e}")
+        except Exception as e:
+            logger.warning(f"Error checking AI Opt-out policy governance: {e}")
+
         return resources
 

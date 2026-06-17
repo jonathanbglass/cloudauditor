@@ -187,6 +187,7 @@ class ConfigClient:
             'AWS::SQS::Queue',
             'AWS::Bedrock::Guardrail',
             'AWS::Bedrock::GuardrailVersion',
+            'AWS::Organizations::AIOptOutPolicy',
         ]
     
     def convert_to_resource(

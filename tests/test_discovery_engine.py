@@ -390,3 +390,64 @@ class TestDiscoverBedrockResources:
         resources = engine._discover_bedrock_resources("123456789012")
         assert len(resources) == 0
 
+    def test_discover_ai_opt_out_policy(self):
+        engine = _make_engine(regions=["us-east-1"])
+        engine._discover_bedrock_resources = ResourceDiscoveryEngine._discover_bedrock_resources.__get__(engine)
+        
+        bedrock_client = MagicMock()
+        bedrock_client.get_model_invocation_logging_configuration.return_value = {}
+        bedrock_client.list_guardrails.return_value = {'guardrailSummaries': []}
+        
+        org_client = MagicMock()
+        org_client.list_roots.return_value = {
+            'Roots': [{
+                'Id': 'r-1',
+                'PolicyTypes': [{'Type': 'AISERVICES_OPT_OUT_POLICY', 'Status': 'ENABLED'}]
+            }]
+        }
+        org_client.list_policies.return_value = {
+            'Policies': [{
+                'Id': 'p-optout',
+                'Name': 'DefaultAIOptOut',
+                'Arn': 'arn:aws:organizations::123456789012:policy/o-123456/p-optout'
+            }]
+        }
+        org_client.describe_policy.return_value = {
+            'Policy': {
+                'PolicySummary': {
+                    'Id': 'p-optout',
+                    'Name': 'DefaultAIOptOut',
+                    'Type': 'AISERVICES_OPT_OUT_POLICY'
+                },
+                'Content': '{"services": {"default": {"opt_out_value": "optOut"}}}'
+            }
+        }
+        org_client.list_policies_for_target.return_value = {
+            'Policies': [{
+                'Id': 'p-optout',
+                'Name': 'DefaultAIOptOut'
+            }]
+        }
+        
+        def mock_client(service_name, **kwargs):
+            if service_name == 'bedrock':
+                return bedrock_client
+            if service_name == 'organizations':
+                return org_client
+            raise Exception("Mock other client")
+            
+        engine.session.client.side_effect = mock_client
+        
+        resources = engine._discover_bedrock_resources("123456789012")
+        
+        # We should find the AI Opt-out policy
+        assert len(resources) == 1
+        res = resources[0]
+        assert res.resource_type == "AWS::Organizations::AIOptOutPolicy"
+        assert res.arn == "arn:aws:organizations::123456789012:policy/o-123456/p-optout"
+        assert res.name == "DefaultAIOptOut"
+        assert res.region == "global"
+        assert res.configuration['Content'] == '{"services": {"default": {"opt_out_value": "optOut"}}}'
+        assert res.configuration['AttachedToRoots'] == ['r-1']
+
+

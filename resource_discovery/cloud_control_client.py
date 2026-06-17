@@ -133,6 +133,7 @@ class CloudControlClient:
             'AWS::Events::Rule',
             'AWS::Bedrock::Guardrail',
             'AWS::Bedrock::GuardrailVersion',
+            'AWS::Organizations::AIOptOutPolicy',
         ]
     
     def convert_to_resource(
