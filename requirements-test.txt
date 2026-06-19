@@ -1,6 +1,6 @@
 # Test dependencies for CloudAuditor
 pytest>=8.0.0
-pytest-cov>=5.0.0
+pytest-cov>=7.1.0
 pytest-mock>=3.14.0
 moto[s3,sts,ec2,iam,config,organizations,cloudformation,secretsmanager]>=5.0.0
 freezegun>=1.4.0
