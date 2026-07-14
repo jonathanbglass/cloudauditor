@@ -2,7 +2,7 @@
 # Python 3.14+ compatible versions
 
 # AWS SDK for Python
-boto3>=1.43.40
+boto3>=1.43.46
 
 # PostgreSQL database adapter (version 3)
 psycopg[binary]>=3.3.4
