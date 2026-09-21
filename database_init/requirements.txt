@@ -1,3 +1,3 @@
-boto3==1.43.92
+boto3==1.43.97
 psycopg[binary]>=3.3.5
 urllib3==2.7.0
