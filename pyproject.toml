@@ -10,6 +10,7 @@ addopts = [
     "--cov=resource_discovery",
     "--cov=lib",
     "--cov=reporting",
+    "--cov=database_init",
     "--cov-report=term-missing",
     "--cov-report=html:reports/coverage",
 ]
@@ -20,17 +21,19 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["resource_discovery", "lib", "reporting"]
+source = ["resource_discovery", "lib", "reporting", "database_init"]
 omit = [
     "tests/*",
     "venv/*",
     ".venv/*",
     ".aws-sam/*",
+    # Standalone demo script, not part of the audit runtime.
+    "resource_discovery/example_usage.py",
 ]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 0
+fail_under = 90
 exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.",

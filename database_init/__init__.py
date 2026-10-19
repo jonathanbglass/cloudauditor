@@ -1,0 +1,1 @@
+"""Database initialization Lambda package."""

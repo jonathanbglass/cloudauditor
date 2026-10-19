@@ -159,3 +159,49 @@ class TestSendResponse:
         body = json.loads(call_args[1]["body"])
         assert body["Status"] == "SUCCESS"
         assert body["StackId"] == "stack-123"
+
+    @patch("database_init.app.http")
+    def test_http_failure_is_swallowed(self, mock_http):
+        """CloudFormation response delivery must not raise out of the handler."""
+        from database_init.app import send_response
+
+        mock_http.request.side_effect = ConnectionError("cfn endpoint down")
+        event = {
+            "StackId": "stack-123",
+            "RequestId": "req-123",
+            "LogicalResourceId": "DbInit",
+            "ResponseURL": "https://cfn.example.com/response",
+        }
+        context = MagicMock()
+        context.log_stream_name = "log-stream"
+
+        send_response(event, context, "FAILED", {"Message": "nope"})
+
+        mock_http.request.assert_called_once()
+
+
+class TestFailurePaths:
+
+    @patch("database_init.app.send_response")
+    @patch("database_init.app.get_secret", side_effect=RuntimeError("secret denied"))
+    def test_create_failure_sends_cfn_failed(
+        self, _mock_secret, mock_send, cfn_create_event, env_vars, mock_context
+    ):
+        with patch.dict("os.environ", env_vars):
+            from database_init.app import lambda_handler
+            response = lambda_handler(cfn_create_event, mock_context)
+
+        assert response["statusCode"] == 500
+        body = json.loads(response["body"])
+        assert body["success"] is False
+        assert "secret denied" in body["error"]
+        assert mock_send.call_args[0][2] == "FAILED"
+
+    def test_missing_env_returns_500(self, cfn_create_event, mock_context):
+        with patch.dict("os.environ", {}, clear=True):
+            from database_init.app import lambda_handler
+            response = lambda_handler(cfn_create_event, mock_context)
+
+        assert response["statusCode"] == 500
+        body = json.loads(response["body"])
+        assert body["success"] is False
