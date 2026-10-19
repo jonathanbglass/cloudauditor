@@ -5,6 +5,22 @@ import pytest
 from datetime import datetime
 from unittest.mock import MagicMock
 
+
+@pytest.fixture(autouse=True)
+def isolated_aws_credentials(monkeypatch):
+    """Keep every test off the real AWS network and instance metadata service.
+
+    boto3 looks up credentials and region before any client call. These dummy
+    values, plus moto in the integration tests, mean the suite never needs
+    live credentials and never contacts AWS.
+    """
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")
+    monkeypatch.setenv("AWS_SECURITY_TOKEN", "testing")
+    monkeypatch.setenv("AWS_SESSION_TOKEN", "testing")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+
 from resource_discovery.models import (
     Resource,
     DiscoveryConfig,

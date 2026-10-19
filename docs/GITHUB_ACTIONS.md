@@ -4,8 +4,10 @@ This guide walks you through deploying CloudAuditor using GitHub Actions CI/CD p
 
 ## Overview
 
-The GitHub Actions workflow automatically:
-1. Tests and lints your code
+Unit tests run separately in [`.github/workflows/test.yml`](../.github/workflows/test.yml) on every pull request and on pushes to `master`. See [TESTING.md](../TESTING.md).
+
+The deploy workflow (`.github/workflows/deploy.yml`) automatically:
+1. Lints and compiles your code
 2. Builds Lambda functions with SAM
 3. Packages and uploads to S3
 4. Deploys infrastructure via CloudFormation

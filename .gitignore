@@ -67,6 +67,7 @@ samconfig.toml.bak
 
 # Test / Coverage
 .coverage
+.pytest_cache/
 coverage_report.txt
 reports/coverage/
 htmlcov/

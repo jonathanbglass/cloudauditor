@@ -67,12 +67,26 @@ result = engine.discover_all_resources()
 print(f"Found {result.total_count} resources")
 ```
 
+### Automated tests
+
+The pytest suite mocks every AWS and database call. No credentials and no network:
+
+```bash
+pip install -r requirements.txt -r requirements-test.txt
+pytest
+```
+
+See **[TESTING.md](TESTING.md)** for markers, coverage, and the GitHub Actions workflow that runs `pytest` on every pull request.
+
 ## Project Structure
 
 ```
 cloudauditor/
 ├── .github/workflows/         # GitHub Actions CI/CD
-│   └── deploy.yml            # Automated deployment pipeline
+│   ├── deploy.yml            # Automated deployment pipeline
+│   └── test.yml              # pytest on every pull request and push to master
+├── tests/                     # pytest suite (moto + unittest mocks)
+├── TESTING.md                 # How to run the tests
 ├── database/                  # Database schemas and utilities
 │   ├── schema.sql            # Modern resource discovery schema
 │   ├── legacy_schema.sql     # Archived IAM-only schema
